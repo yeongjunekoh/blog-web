@@ -1,0 +1,57 @@
+---
+import { SITE_TITLE } from "../consts";
+import ThemeToggle from "./ThemeToggle.astro";
+
+const navItems = [
+  { href: "/", label: "홈" },
+  { href: "/blog", label: "블로그" },
+  { href: "/knowledge", label: "지식" },
+  { href: "/resume", label: "이력서" },
+];
+
+const currentPath = Astro.url.pathname;
+
+function isCurrent(href: string): boolean {
+  if (href === "/") return currentPath === "/";
+  return currentPath === href || currentPath.startsWith(`${href}/`);
+}
+---
+
+<header
+  class="border-b border-neutral-200 bg-white/80 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80"
+>
+  <div
+    class="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-5"
+  >
+    <a
+      href="/"
+      class="text-base font-bold tracking-tight hover:text-accent"
+      >{SITE_TITLE}</a
+    >
+    <div class="flex items-center gap-1 sm:gap-2">
+      <nav aria-label="주 메뉴">
+        <ul class="flex items-center gap-1 text-sm sm:gap-2">
+          {
+            navItems.map(({ href, label }) => (
+              <li>
+                <a
+                  href={href}
+                  aria-current={isCurrent(href) ? "page" : undefined}
+                  class:list={[
+                    "rounded px-2 py-1.5 transition-colors hover:text-accent sm:px-3",
+                    isCurrent(href)
+                      ? "font-semibold text-accent"
+                      : "text-neutral-600 dark:text-neutral-400",
+                  ]}
+                >
+                  {label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

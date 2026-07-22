@@ -1,0 +1,98 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import FormattedDate from "../components/FormattedDate.astro";
+import { getPublishedBlog, getPublishedKnowledge } from "../lib/content";
+import { AUTHOR_NAME, SITE_URL, SITE_DESCRIPTION, GITHUB_URL } from "../consts";
+
+const recentPosts = (await getPublishedBlog()).slice(0, 3);
+const recentNotes = (await getPublishedKnowledge()).slice(0, 3);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: AUTHOR_NAME,
+  url: SITE_URL,
+  sameAs: [GITHUB_URL],
+  description: SITE_DESCRIPTION,
+};
+---
+
+<BaseLayout {jsonLd}>
+  <section class="mb-16">
+    <h1 class="text-3xl font-bold tracking-tight">고영준</h1>
+    <!-- TODO(고영준): 아래 소개는 placeholder. 실제 소개로 교체할 것. -->
+    <div class="mt-6 space-y-4 leading-relaxed text-neutral-700 dark:text-neutral-300">
+      <p>
+        안녕하세요, 고영준입니다. 이곳은 제가 만드는 것들과 배우는 것들을
+        기록하는 공간입니다. <span class="text-neutral-400 dark:text-neutral-500"
+          >(소개 placeholder — 실제 소개로 교체 예정)</span
+        >
+      </p>
+      <p>
+        글의 원본은 마크다운과 git으로 소유하고, 완성된 HTML을 정적으로
+        서빙합니다. 사람에게도, 기계에게도 잘 읽히는 글을 지향합니다.
+      </p>
+    </div>
+  </section>
+
+  <section class="mb-16">
+    <div class="mb-4 flex items-baseline justify-between border-b border-neutral-200 pb-3 dark:border-neutral-800">
+      <h2 class="text-lg font-semibold tracking-tight">최근 글</h2>
+      <a href="/blog" class="text-sm text-accent hover:underline">전체 보기</a>
+    </div>
+    {
+      recentPosts.length === 0 ? (
+        <p class="text-sm text-neutral-500">아직 글이 없습니다.</p>
+      ) : (
+        <ul class="space-y-5">
+          {recentPosts.map((post) => (
+            <li>
+              <a href={`/blog/${post.id}/`} class="group block">
+                <h3 class="font-medium group-hover:text-accent">
+                  {post.data.title}
+                </h3>
+                <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  <FormattedDate date={post.data.pubDate} /> ·{" "}
+                  {post.data.description}
+                </p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+
+  <section>
+    <div class="mb-4 flex items-baseline justify-between border-b border-neutral-200 pb-3 dark:border-neutral-800">
+      <h2 class="text-lg font-semibold tracking-tight">최근 지식 노트</h2>
+      <a href="/knowledge" class="text-sm text-accent hover:underline"
+        >전체 보기</a
+      >
+    </div>
+    {
+      recentNotes.length === 0 ? (
+        <p class="text-sm text-neutral-500">아직 노트가 없습니다.</p>
+      ) : (
+        <ul class="space-y-5">
+          {recentNotes.map((note) => (
+            <li>
+              <a href={`/knowledge/${note.id}/`} class="group block">
+                <h3 class="font-medium group-hover:text-accent">
+                  <span class="mr-2 text-sm font-normal text-accent">
+                    {note.data.category}
+                  </span>
+                  {note.data.title}
+                </h3>
+                <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  <FormattedDate date={note.data.pubDate} /> ·{" "}
+                  {note.data.description}
+                </p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+</BaseLayout>

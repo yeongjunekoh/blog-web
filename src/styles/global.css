@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* 다크모드: html.dark 클래스 기반 (FOUC 방지 인라인 스크립트가 제어) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo",
+    "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+
+/* 포인트 컬러: 딥 틸(teal). 라이트/다크에서 명도만 다르게. */
+@theme inline {
+  --color-accent: var(--accent);
+}
+
+:root {
+  --accent: #0f766e;
+}
+.dark {
+  --accent: #2dd4bf;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Shiki 듀얼 테마: 다크모드에서 dark 변수 사용 */
+.astro-code {
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+.dark .astro-code,
+.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}

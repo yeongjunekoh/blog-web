@@ -1,0 +1,32 @@
+---
+import { SITE_TITLE, GITHUB_URL } from "../consts";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-neutral-200 dark:border-neutral-800">
+  <div
+    class="mx-auto flex w-full max-w-2xl flex-col gap-2 px-6 py-8 text-sm text-neutral-500 sm:flex-row sm:items-center sm:justify-between dark:text-neutral-400"
+  >
+    <p>© {year} {SITE_TITLE}</p>
+    <nav aria-label="보조 메뉴">
+      <ul class="flex items-center gap-4">
+        <li>
+          <a href="/rss.xml" class="transition-colors hover:text-accent">RSS</a>
+        </li>
+        <li>
+          <a href="/llms.txt" class="transition-colors hover:text-accent"
+            >llms.txt</a
+          >
+        </li>
+        <li>
+          <a
+            href={GITHUB_URL}
+            class="transition-colors hover:text-accent"
+            rel="me noopener">GitHub</a
+          >
+        </li>
+      </ul>
+    </nav>
+  </div>
+</footer>

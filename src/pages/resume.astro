@@ -1,0 +1,135 @@
+---
+import { parse } from "yaml";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import resumeRaw from "../data/resume.yaml?raw";
+
+interface Resume {
+  name: string;
+  title: string;
+  summary: string;
+  contact: { email: string; github: string; location?: string };
+  experience: {
+    company: string;
+    role: string;
+    period: string;
+    points: string[];
+  }[];
+  education: { school: string; degree: string; period: string }[];
+  skills: { category: string; items: string[] }[];
+}
+
+const resume = parse(resumeRaw) as Resume;
+---
+
+<BaseLayout
+  title="이력서"
+  description={`${resume.name}의 이력서. ${resume.title}`}
+>
+  <article>
+    <header class="mb-12">
+      <h1 class="text-3xl font-bold tracking-tight">{resume.name}</h1>
+      <p class="mt-2 text-lg text-neutral-600 dark:text-neutral-400">
+        {resume.title}
+      </p>
+      <p class="mt-4 leading-relaxed text-neutral-700 dark:text-neutral-300">
+        {resume.summary}
+      </p>
+      <ul
+        class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-neutral-500 dark:text-neutral-400"
+      >
+        <li>
+          <a
+            href={`mailto:${resume.contact.email}`}
+            class="text-accent hover:underline">{resume.contact.email}</a
+          >
+        </li>
+        <li>
+          <a
+            href={resume.contact.github}
+            rel="me noopener"
+            class="text-accent hover:underline">GitHub</a
+          >
+        </li>
+        {resume.contact.location && <li>{resume.contact.location}</li>}
+      </ul>
+    </header>
+
+    <section class="mb-12" aria-labelledby="experience-heading">
+      <h2
+        id="experience-heading"
+        class="mb-6 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight dark:border-neutral-800"
+      >
+        경력
+      </h2>
+      <ul class="space-y-8">
+        {
+          resume.experience.map((job) => (
+            <li>
+              <div class="flex flex-wrap items-baseline justify-between gap-x-4">
+                <h3 class="font-semibold">{job.company}</h3>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                  {job.period}
+                </p>
+              </div>
+              <p class="mt-0.5 text-sm text-accent">{job.role}</p>
+              <ul class="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                {job.points.map((point) => (
+                  <li>{point}</li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="mb-12" aria-labelledby="education-heading">
+      <h2
+        id="education-heading"
+        class="mb-6 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight dark:border-neutral-800"
+      >
+        학력
+      </h2>
+      <ul class="space-y-4">
+        {
+          resume.education.map((edu) => (
+            <li class="flex flex-wrap items-baseline justify-between gap-x-4">
+              <div>
+                <h3 class="font-semibold">{edu.school}</h3>
+                <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                  {edu.degree}
+                </p>
+              </div>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                {edu.period}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section aria-labelledby="skills-heading">
+      <h2
+        id="skills-heading"
+        class="mb-6 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight dark:border-neutral-800"
+      >
+        스킬
+      </h2>
+      <ul class="space-y-3">
+        {
+          resume.skills.map((group) => (
+            <li class="flex flex-col gap-1 sm:flex-row sm:gap-4">
+              <h3 class="w-32 shrink-0 text-sm font-semibold">
+                {group.category}
+              </h3>
+              <p class="text-sm text-neutral-700 dark:text-neutral-300">
+                {group.items.join(", ")}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </article>
+</BaseLayout>

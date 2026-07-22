@@ -1,0 +1,57 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import FormattedDate from "../../components/FormattedDate.astro";
+import { getPublishedKnowledge, groupByCategory } from "../../lib/content";
+
+const notes = await getPublishedKnowledge();
+const grouped = groupByCategory(notes);
+---
+
+<BaseLayout
+  title="지식"
+  description="고영준의 지식 노트. 주제별로 정리한 기술 노트 모음."
+>
+  <h1 class="mb-4 text-3xl font-bold tracking-tight">지식</h1>
+  <p class="mb-10 text-neutral-600 dark:text-neutral-400">
+    공부한 것을 주제별로 정리한 노트입니다.
+  </p>
+
+  {
+    notes.length === 0 ? (
+      <p class="text-neutral-500">아직 노트가 없습니다.</p>
+    ) : (
+      <div class="space-y-12">
+        {[...grouped.entries()].map(([category, entries]) => (
+          <section aria-labelledby={`category-${category}`}>
+            <h2
+              id={`category-${category}`}
+              class="mb-4 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight text-accent dark:border-neutral-800"
+            >
+              {category}
+              <span class="ml-2 text-sm font-normal text-neutral-400">
+                {entries.length}
+              </span>
+            </h2>
+            <ul class="space-y-5">
+              {entries.map((note) => (
+                <li>
+                  <a href={`/knowledge/${note.id}/`} class="group block">
+                    <article>
+                      <h3 class="font-medium group-hover:text-accent">
+                        {note.data.title}
+                      </h3>
+                      <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                        <FormattedDate date={note.data.pubDate} /> ·{" "}
+                        {note.data.description}
+                      </p>
+                    </article>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    )
+  }
+</BaseLayout>
