@@ -32,6 +32,18 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* 인쇄(PDF 저장) 대응: 사이트 크롬을 숨기고 본문만 출력한다.
+   리크루터가 /resume를 PDF로 뽑는 경우를 가정. */
+@media print {
+  body > header,
+  body > footer {
+    display: none;
+  }
+  main {
+    padding-block: 0;
+  }
+}
+
 /* Shiki 듀얼 테마: 다크모드에서 dark 변수 사용 */
 .astro-code {
   border-radius: 0.5rem;
