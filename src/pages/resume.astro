@@ -9,6 +9,7 @@ interface Resume {
   title: string;
   summary: string;
   about?: string[];
+  aboutLinks?: { label: string; items: { title: string; href: string }[] };
   contact: { email: string; github: string; location?: string };
   experience: {
     company: string;
@@ -74,6 +75,19 @@ const jsonLd = {
             {resume.about.map((paragraph) => (
               <p>{paragraph}</p>
             ))}
+            {resume.aboutLinks && (
+              <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                {resume.aboutLinks.label} —{" "}
+                {resume.aboutLinks.items.map((item, i) => (
+                  <>
+                    {i > 0 && " · "}
+                    <a href={item.href} class="text-accent hover:underline">
+                      {item.title}
+                    </a>
+                  </>
+                ))}
+              </p>
+            )}
           </div>
         )
       }
