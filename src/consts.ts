@@ -10,5 +10,5 @@ export const SITE_TITLE = "고영준";
 export const SITE_DESCRIPTION =
   "고영준의 개인 블로그. 소프트웨어, 제품, 그리고 배운 것들을 기록합니다.";
 export const AUTHOR_NAME = "고영준";
-export const GITHUB_URL = "https://github.com/kohyeongjune";
+export const GITHUB_URL = "https://github.com/yeongjunekoh";
 export const SITE_LANG = "ko";

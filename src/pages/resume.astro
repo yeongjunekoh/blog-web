@@ -2,28 +2,44 @@
 import { parse } from "yaml";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import resumeRaw from "../data/resume.yaml?raw";
+import { SITE_URL } from "../consts";
 
 interface Resume {
   name: string;
   title: string;
   summary: string;
+  about?: string[];
   contact: { email: string; github: string; location?: string };
   experience: {
     company: string;
     role: string;
     period: string;
+    summary?: string;
     points: string[];
   }[];
   education: { school: string; degree: string; period: string }[];
+  awards?: { title: string; date: string }[];
   skills: { category: string; items: string[] }[];
 }
 
 const resume = parse(resumeRaw) as Resume;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: resume.name,
+  jobTitle: resume.title,
+  email: `mailto:${resume.contact.email}`,
+  url: new URL("/resume/", SITE_URL).href,
+  sameAs: [resume.contact.github],
+  description: resume.summary,
+};
 ---
 
 <BaseLayout
   title="이력서"
   description={`${resume.name}의 이력서. ${resume.title}`}
+  {jsonLd}
 >
   <article>
     <header class="mb-12">
@@ -52,6 +68,15 @@ const resume = parse(resumeRaw) as Resume;
         </li>
         {resume.contact.location && <li>{resume.contact.location}</li>}
       </ul>
+      {
+        resume.about && (
+          <div class="mt-6 space-y-3 border-t border-neutral-200 pt-6 leading-relaxed text-neutral-700 dark:border-neutral-800 dark:text-neutral-300">
+            {resume.about.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </div>
+        )
+      }
     </header>
 
     <section class="mb-12" aria-labelledby="experience-heading">
@@ -72,6 +97,11 @@ const resume = parse(resumeRaw) as Resume;
                 </p>
               </div>
               <p class="mt-0.5 text-sm text-accent">{job.role}</p>
+              {job.summary && (
+                <p class="mt-2 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
+                  {job.summary}
+                </p>
+              )}
               <ul class="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
                 {job.points.map((point) => (
                   <li>{point}</li>
@@ -108,6 +138,29 @@ const resume = parse(resumeRaw) as Resume;
         }
       </ul>
     </section>
+
+    {
+      resume.awards && (
+        <section class="mb-12" aria-labelledby="awards-heading">
+          <h2
+            id="awards-heading"
+            class="mb-6 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight dark:border-neutral-800"
+          >
+            수상
+          </h2>
+          <ul class="space-y-2">
+            {resume.awards.map((award) => (
+              <li class="flex flex-wrap items-baseline justify-between gap-x-4">
+                <h3 class="text-sm font-medium">{award.title}</h3>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                  {award.date}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
 
     <section aria-labelledby="skills-heading">
       <h2

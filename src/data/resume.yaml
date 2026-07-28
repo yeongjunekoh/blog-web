@@ -1,38 +1,143 @@
 # 이력서 데이터 — 이 파일만 수정하면 /resume 페이지에 반영된다.
-# 아래 내용은 전부 placeholder. 실제 이력으로 교체할 것.
+# 사내 수치·내부 시스템 명칭은 공개 수준으로 일반화해서 기재한다.
 
 name: 고영준
-title: "직함 placeholder (예: 소프트웨어 엔지니어)"
+title: "Product Manager · Product Engineer"
 summary: >-
-  한 줄 소개 placeholder. 어떤 문제를 풀어왔고 무엇을 잘하는지 2~3문장으로 요약.
+  고객, 데이터, 법·제도를 분석해 진짜 문제를 정의하고 팀과 함께 해결하는
+  PM입니다. 프론트엔드 엔지니어로 시작해 지금은 기획과 개발을 오가며 제품을
+  만듭니다.
+
+about:
+  - >-
+    전기공학을 공부하던 시절 마케팅 공모전 10여 개에 참여하면서 서비스가
+    사람들에게 주는 긍정적 가치를 처음 생각하게 됐고, 그 가치를 직접 구현하고
+    싶어 개발자가 되었습니다. 소프트웨어 마에스트로에서 PO와 프론트엔드
+    엔지니어를 겸하며 팀을 이끌었고, 지금은 케어링에서 장기요양 도메인의
+    ERP와 자동화 시스템을 기획하고 개발합니다.
+  - >-
+    저의 핵심은 제품, 비즈니스, 사용자, 소프트웨어에 대한 이해를 기반으로
+    가치를 만들고 전달하는 것입니다. 모든 프로젝트의 시작점에서 목표와 문제를
+    먼저 묻고, 결정은 문서로 남기며, 배포 후에는 회고로 배웁니다. 팀이 같은
+    문제를 바라보고 실행할 때 제품의 가치가 가장 빠르게 만들어진다고 믿습니다.
 
 contact:
   email: yj.koh@caring.co.kr
-  github: https://github.com/kohyeongjune
-  location: "서울, 대한민국 (placeholder)"
+  github: https://github.com/yeongjunekoh
+  location: "서울, 대한민국"
 
 experience:
-  - company: "회사명 placeholder"
-    role: "역할 placeholder"
-    period: "2024. 01 — 현재"
+  - company: "케어링"
+    role: "PM · Frontend Engineer"
+    period: "2024. 06 — 현재"
+    summary: >-
+      장기요양(시니어케어) 도메인. 행정 업무의 시스템화를 담당하며 ERP·자동화
+      시스템의 기획과 프론트엔드 개발을 함께 수행.
     points:
-      - "주요 성과 placeholder — 무엇을 만들었고 어떤 임팩트가 있었는지"
-      - "주요 성과 placeholder — 수치와 함께"
-  - company: "이전 회사명 placeholder"
-    role: "역할 placeholder"
-    period: "2022. 01 — 2023. 12"
+      - >-
+        장기요양 행정 업무를 시스템화해 반복 업무 비용을 최대 90% 절감 —
+        범죄경력조회 일 2시간 → 10분, 인력신고 일 1.5시간 → 15분(월 75시간
+        이상 절감) 자동화
+      - >-
+        계약 후 분산 관리되던 17가지 행정업무를 통합하는 계약관리·자동 검수
+        시스템 구축 — 업무 프로세스 50% 이상 효율화
+      - >-
+        공단 제출 데이터의 정합성을 자동 검증하는 업무수행일지·방문내역 검수
+        현황판 구축 — 검수 시간 70% 이상 단축, 환수·감산 리스크 선제 차단
+      - >-
+        프로덕트팀이 없던 조직에 도메인 문서화·산출물 관리·리뷰 플로우를
+        도입해 산출물 방향성 불일치를 90% 이상 감소
+      - >-
+        노인장기요양보험 고시·양식 변경(업무수행일지, 급여제공기록지, 임금
+        정산 로직)을 분석해 ERP에 반영 — 임금 정산 고시 개정 대응을 스쿼드
+        PM으로 리드해 법정 기한 내 배포
+      - >-
+        수천 명 규모의 요양보호사 데이터를 채용·매칭 시스템으로 마이그레이션 —
+        개인정보 규제 검토와 필드 단위 데이터 정책 설계를 병행해 엔드투엔드
+        완수
+      - >-
+        스프레드시트로 파편화돼 있던 고객 유입~전환 퍼널을 통합 관리하는
+        상담·등급신청 시스템 재기획 리드 — 도메인 리서치와 현장 인터뷰부터
+        기능 매뉴얼·사용자 피드백 반영까지 (진행 중)
+  - company: "소프트웨어 마에스트로 14기"
+    role: "PO · Frontend Engineer — TEAM HUNDRED 팀장"
+    period: "2023. 04 — 2023. 12"
+    summary: >-
+      절약 습관 형성 챌린지 플랫폼 'Savable' 기획·개발.
     points:
-      - "주요 성과 placeholder"
+      - >-
+        오픈채팅 → 카카오 챗봇·웹 → 앱으로 단계를 나눠 사용자 검증을 반복하는
+        MVP 전략 설계·실행
+      - >-
+        출시 한 달 내 Google Play 설치 4,000건, DAU 200, 습관 형성률 78% —
+        86팀 중 12팀 우수 프로젝트 선정
+      - >-
+        React Native 앱(챌린지 인증 카메라, 카카오 로그인), Amplitude 데이터
+        분석 환경, GitHub Actions CI/CD 구축
+      - >-
+        Agile·Scrum 기반 팀 운영 — 스프린트 리뷰 16회, 2주 단위 '사용자 관점'
+        KPT 회고, Funnel 설계
+  - company: "(주)비바이노베이션"
+    role: "Frontend Engineer (계약)"
+    period: "2021. 08 — 2022. 01"
+    summary: >-
+      비대면 의료 상담·건강관리 MVP '착한의사 홈닥터' 모바일 앱 개발.
+    points:
+      - >-
+        React Native 기반 MVP 앱 개발·출시 — IoT 로봇 QR 회원가입과 관리자
+        승인 인증 플로우를 AWS SQS 기반 시퀀스로 설계
+      - >-
+        Agora WebRTC 화상 진료, AI 증상 체크 API 연동, 복약·기상·식사 push
+        notification 구현
 
 education:
-  - school: "학교명 placeholder"
-    degree: "전공/학위 placeholder"
-    period: "2018 — 2022"
+  - school: "인하대학교"
+    degree: "전기공학과 수료"
+    period: "2017. 03 — 2024. 06"
+
+awards:
+  - title: "소프트웨어 마에스트로 14기 우수 프로젝트"
+    date: "2023. 12"
+  - title: "소프트웨어 마에스트로 14기 프로젝트공들여상"
+    date: "2023. 12"
+  - title: "제2회 한주소금 마케팅 공모전 수상"
+    date: "2018. 09"
+  - title: "2018 인하 스타트업 메이커톤 아이디어상"
+    date: "2018. 08"
 
 skills:
-  - category: "언어"
-    items: ["placeholder (예: TypeScript, Python)"]
-  - category: "프레임워크/도구"
-    items: ["placeholder (예: React, Astro, Node.js)"]
-  - category: "기타"
-    items: ["placeholder"]
+  - category: "Product"
+    items:
+      [
+        "문제 정의·PRD",
+        "KPI/OKR",
+        "Agile & Scrum",
+        "KPT 회고",
+        "Funnel 설계",
+        "Amplitude",
+        "Jira & Confluence",
+        "Figma",
+      ]
+  - category: "Frontend"
+    items:
+      [
+        "React",
+        "TypeScript",
+        "React Native",
+        "Next.js",
+        "react-query",
+        "react-hook-form",
+        "Redux Toolkit",
+        "Storybook",
+      ]
+  - category: "인프라·도구"
+    items:
+      [
+        "GitHub Actions CI/CD",
+        "AWS (SQS, Amplify)",
+        "Firebase",
+        "Sentry",
+        "Cursor·Claude 등 AI 도구",
+      ]
+  - category: "도메인"
+    items: ["노인장기요양보험 법·고시 분석", "ERP·CRM 등 B2B 업무 시스템"]
