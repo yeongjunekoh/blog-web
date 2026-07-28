@@ -44,6 +44,25 @@ body {
   }
 }
 
+/* 본문 표 렌더링 보정
+   1) word-break: keep-all — CJK는 글자 사이 어디서든 줄바꿈될 수 있어,
+      표 자동 레이아웃이 라벨 열을 낱자 폭까지 짓눌러 글자가 세로로 쌓인다.
+      단어 단위로만 줄바꿈하게 해 열이 최소한 단어 폭을 확보하도록 한다.
+   2) display: block + overflow-x: auto — 그래도 표 최소 폭이 컨테이너보다
+      넓어지면(모바일) 페이지가 아니라 표 자신만 가로 스크롤한다. */
+.prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 머리글 셀이 전부 빈 표(`|  |  |`): 빈 헤더 띠가 그려지지 않게 숨긴다 */
+.prose thead:not(:has(th:not(:empty))) {
+  display: none;
+}
+
 /* Shiki 듀얼 테마: 다크모드에서 dark 변수 사용 */
 .astro-code {
   border-radius: 0.5rem;
