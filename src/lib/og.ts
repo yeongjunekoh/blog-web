@@ -11,6 +11,17 @@ const pretendardRegular = fs.readFileSync(
   path.join(fontDir, "Pretendard-Regular.otf"),
 );
 
+// 브랜드 마크: OG 배경(#0a0a0a)에 맞춰 사전 반전된 PNG를 data URI로 임베드한다.
+// (satori는 런타임 CSS filter를 지원하지 않는다. 인코딩은 글마다 반복되지 않도록 모듈 최상위에서 1회만.)
+const markPng = fs.readFileSync(path.resolve(process.cwd(), "src/assets/og-mark.png"));
+const MARK_URI = `data:image/png;base64,${markPng.toString("base64")}`;
+
+// 마크는 우하단 고정(right:40, bottom:0). 텍스트 블록은 마크 왼쪽 경계(x=872)를
+// 침범하지 않도록 TEXT_MAX_WIDTH로 잘라낸다. (padding-left 80 + 760 = 840)
+const MARK_W = 288;
+const MARK_H = 432;
+const TEXT_MAX_WIDTH = "760px";
+
 const ACCENT = "#2dd4bf";
 const hostname = new URL(SITE_URL).hostname;
 
@@ -31,6 +42,7 @@ export async function renderOgImage({
       type: "div",
       props: {
         style: {
+          position: "relative",
           width: "100%",
           height: "100%",
           display: "flex",
@@ -43,6 +55,22 @@ export async function renderOgImage({
           borderTop: `16px solid ${ACCENT}`,
         },
         children: [
+          {
+            type: "img",
+            props: {
+              src: MARK_URI,
+              // satori가 preserveAspectRatio="none"을 붙이므로 에셋 원본 비율(304:456 = 2:3)을
+              // 정확히 지켜야 한다. 288x432는 2:3의 정확한 배수.
+              width: MARK_W,
+              height: MARK_H,
+              style: {
+                position: "absolute",
+                right: "40px",
+                bottom: "0px",
+                opacity: 0.85,
+              },
+            },
+          },
           {
             type: "div",
             props: {
@@ -75,6 +103,8 @@ export async function renderOgImage({
                       lineHeight: 1.25,
                       letterSpacing: "-0.02em",
                       wordBreak: "keep-all",
+                      // 우측 브랜드 마크 영역을 침범하지 않도록 제목 폭을 제한한다.
+                      maxWidth: TEXT_MAX_WIDTH,
                     },
                     children: title,
                   },
@@ -91,6 +121,9 @@ export async function renderOgImage({
                 justifyContent: "space-between",
                 fontSize: "28px",
                 color: "#a3a3a3",
+                // 푸터도 마크 아래를 통과하지 않도록 폭을 제한한다.
+                // (제한하지 않으면 호스트명이 인물 다리 선과 겹쳐 읽기 어려워진다.)
+                maxWidth: TEXT_MAX_WIDTH,
               },
               children: [
                 {
