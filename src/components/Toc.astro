@@ -1,0 +1,149 @@
+---
+import type { MarkdownHeading } from "astro";
+
+/**
+ * 글 상세 우측 플로팅 목차 (TOC).
+ *
+ * - 빌드 타임 정적 HTML: JS가 없어도 목차가 보이고 앵커 링크가 동작한다.
+ *   JS(IntersectionObserver)는 "현재 읽는 섹션 하이라이트"에만 쓰인다.
+ * - h2/h3만 대상. 글에 h3만 있는 경우(구식 글) 들여쓰기가 어색하지 않도록
+ *   최소 depth를 기준으로 상대 들여쓰기한다.
+ * - 헤딩이 2개 미만이면 아예 렌더하지 않는다.
+ * - 본문(max-w-2xl 중앙 컬럼)을 침범하지 않도록 xl(1280px) 이상에서만 표시.
+ *   높이 0의 sticky 앵커 + 절대 배치로 본문 오른쪽 여백에 띄운다.
+ */
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const minDepth = items.length > 0 ? Math.min(...items.map((h) => h.depth)) : 2;
+---
+
+{
+  items.length >= 2 && (
+    <div class="toc-anchor" data-toc>
+      <aside class="toc">
+        <nav aria-label="목차">
+          <p class="mb-3 text-xs font-semibold tracking-wide text-neutral-500 dark:text-neutral-400">
+            목차
+          </p>
+          <ul class="border-l border-neutral-200 text-[0.8125rem] leading-relaxed dark:border-neutral-800">
+            {items.map((h) => (
+              <li>
+                <a
+                  href={`#${h.slug}`}
+                  data-toc-link
+                  data-heading-id={h.slug}
+                  class:list={[
+                    "toc-link block py-1 text-neutral-400 transition-colors hover:text-neutral-700 dark:text-neutral-500 dark:hover:text-neutral-300",
+                    h.depth - minDepth === 0 ? "pl-3.5" : "pl-7",
+                  ]}
+                >
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+    </div>
+  )
+}
+
+<style>
+  /* 기본(좁은 화면): 숨김. 모바일 접이식은 범위 밖. */
+  .toc-anchor {
+    display: none;
+  }
+
+  /* xl(80rem=1280px) 이상: 본문 컬럼 오른쪽에 플로팅.
+     - 앵커는 높이 0의 sticky 요소라 본문 흐름에 영향이 없다.
+     - .toc는 앵커 기준 절대 배치로 본문 오른쪽 3rem 지점에 뜬다.
+       (1280px 기준: 본문 오른쪽 여백 ≈ 328px, TOC 240px + 간격 48px가 들어간다) */
+  @media (min-width: 80rem) {
+    .toc-anchor {
+      display: block;
+      position: sticky;
+      top: 3rem;
+      height: 0;
+    }
+    .toc {
+      position: absolute;
+      top: 0;
+      left: calc(100% + 3rem);
+      width: 15rem;
+      max-height: calc(100vh - 6rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      word-break: keep-all;
+    }
+  }
+
+  /* 현재 읽는 섹션: 얇은 좌측 보더 + 틸 포인트 컬러.
+     보더는 리스트의 1px 보더 위에 2px로 겹쳐 그린다. */
+  .toc-link {
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+  }
+  .toc-link[aria-current="true"] {
+    border-left-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+</style>
+
+<script>
+  // 스크롤 스파이: 실패해도 목차 자체(정적 HTML)는 온전하다.
+  const toc = document.querySelector("[data-toc]");
+  if (toc) {
+    const links = Array.from(
+      toc.querySelectorAll<HTMLAnchorElement>("a[data-toc-link]"),
+    );
+    const linkById = new Map(
+      links.map((link) => [link.dataset.headingId ?? "", link]),
+    );
+    const headings = Array.from(linkById.keys())
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    if (headings.length > 0) {
+      const READING_LINE = 96; // 뷰포트 상단에서의 기준선(px)
+      let activeId: string | null = null;
+
+      const setActive = (id: string | null) => {
+        if (id === activeId) return;
+        activeId = id;
+        for (const link of links) {
+          if (link.dataset.headingId === id) {
+            link.setAttribute("aria-current", "true");
+          } else {
+            link.removeAttribute("aria-current");
+          }
+        }
+      };
+
+      // IO는 헤딩이 기준선을 지날 때만 깨우는 트리거로 쓰고,
+      // 실제 활성 헤딩은 위치로 다시 계산한다 (양방향 스크롤 모두 정확).
+      const recompute = () => {
+        let current: string | null = null;
+        for (const heading of headings) {
+          if (heading.getBoundingClientRect().top <= READING_LINE) {
+            current = heading.id;
+          } else {
+            break;
+          }
+        }
+        setActive(current);
+      };
+
+      const observer = new IntersectionObserver(recompute, {
+        rootMargin: `-${READING_LINE}px 0px -60% 0px`,
+      });
+      for (const heading of headings) observer.observe(heading);
+      recompute();
+    }
+  }
+</script>

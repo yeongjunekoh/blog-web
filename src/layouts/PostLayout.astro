@@ -1,16 +1,19 @@
 ---
+import type { MarkdownHeading } from "astro";
 import BaseLayout from "./BaseLayout.astro";
 import Comments from "../components/Comments.astro";
 import FormattedDate from "../components/FormattedDate.astro";
+import Toc from "../components/Toc.astro";
 import { AUTHOR_NAME, SITE_URL } from "../consts";
 import type { AnyEntry } from "../lib/content";
 
 interface Props {
   entry: AnyEntry;
   collection: "blog" | "knowledge";
+  headings?: MarkdownHeading[];
 }
 
-const { entry, collection } = Astro.props;
+const { entry, collection, headings = [] } = Astro.props;
 const { title, description, pubDate, updatedDate, tags } = entry.data;
 const category = "category" in entry.data ? entry.data.category : undefined;
 
@@ -81,6 +84,8 @@ const jsonLd = {
       </div>
     </header>
 
+    <Toc {headings} />
+
     <div
       class="prose prose-neutral dark:prose-invert max-w-none prose-headings:tracking-tight prose-a:text-accent prose-a:decoration-accent/40 prose-a:underline-offset-4 hover:prose-a:decoration-accent"
     >
@@ -90,3 +95,11 @@ const jsonLd = {
 
   <Comments />
 </BaseLayout>
+
+<style>
+  /* TOC 앵커 이동 시 헤딩이 뷰포트 상단에 딱 붙지 않도록 여유를 준다.
+     (부드러운 스크롤 자체는 global.css의 html { scroll-behavior: smooth }) */
+  .prose :global(:is(h2, h3, h4)) {
+    scroll-margin-top: 1.5rem;
+  }
+</style>
