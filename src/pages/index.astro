@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import FormattedDate from "../components/FormattedDate.astro";
+import PostThumb from "../components/PostThumb.astro";
 import { getPublishedBlog, getPublishedKnowledge } from "../lib/content";
 import { AUTHOR_NAME, SITE_URL, SITE_DESCRIPTION, GITHUB_URL } from "../consts";
 
@@ -47,14 +48,22 @@ const jsonLd = {
         <ul class="space-y-5">
           {recentPosts.map((post) => (
             <li>
-              <a href={`/blog/${post.id}/`} class="group block">
-                <h3 class="font-medium group-hover:text-accent">
-                  {post.data.title}
-                </h3>
-                <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                  <FormattedDate date={post.data.pubDate} /> ·{" "}
-                  {post.data.description}
-                </p>
+              <a href={`/blog/${post.id}/`} class="group flex items-start gap-5">
+                <div class="min-w-0 flex-1">
+                  <h3 class="font-medium group-hover:text-accent">
+                    {post.data.title}
+                  </h3>
+                  <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                    <FormattedDate date={post.data.pubDate} /> ·{" "}
+                    {post.data.description}
+                  </p>
+                  {post.data.tags.length > 0 && (
+                    <p class="mt-1.5 text-xs text-neutral-500 dark:text-neutral-500">
+                      {post.data.tags.map((t) => `#${t}`).join(" ")}
+                    </p>
+                  )}
+                </div>
+                <PostThumb entry={post} />
               </a>
             </li>
           ))}
@@ -77,17 +86,28 @@ const jsonLd = {
         <ul class="space-y-5">
           {recentNotes.map((note) => (
             <li>
-              <a href={`/knowledge/${note.id}/`} class="group block">
-                <h3 class="font-medium group-hover:text-accent">
-                  <span class="mr-2 text-sm font-normal text-accent">
-                    {note.data.category}
-                  </span>
-                  {note.data.title}
-                </h3>
-                <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                  <FormattedDate date={note.data.pubDate} /> ·{" "}
-                  {note.data.description}
-                </p>
+              <a
+                href={`/knowledge/${note.id}/`}
+                class="group flex items-start gap-5"
+              >
+                <div class="min-w-0 flex-1">
+                  <h3 class="font-medium group-hover:text-accent">
+                    <span class="mr-2 text-sm font-normal text-accent">
+                      {note.data.category}
+                    </span>
+                    {note.data.title}
+                  </h3>
+                  <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                    <FormattedDate date={note.data.pubDate} /> ·{" "}
+                    {note.data.description}
+                  </p>
+                  {note.data.tags.length > 0 && (
+                    <p class="mt-1.5 text-xs text-neutral-500 dark:text-neutral-500">
+                      {note.data.tags.map((t) => `#${t}`).join(" ")}
+                    </p>
+                  )}
+                </div>
+                <PostThumb entry={note} />
               </a>
             </li>
           ))}

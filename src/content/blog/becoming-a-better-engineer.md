@@ -3,6 +3,7 @@ title: "더 좋은 엔지니어가 되기 위한 한 걸음"
 description: "더 좋은 엔지니어란 무엇인지 스스로 생각하고 나만의 방향성을 수립."
 pubDate: 2025-07-07
 tags: ["에세이", "엔지니어", "성장", "자기개발"]
+heroImage: /images/blog/becoming-a-better-engineer/01.png
 ---
 
 > **성장은 방향이 있는 질문에서 시작된다.**

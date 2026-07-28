@@ -3,6 +3,7 @@ title: "PO는 어떤 역량을 강화해야 할까?"
 description: "PO/PM의 역할과 책임을 비교하고, '제품에 대한 전문가'가 되기 위해 어떤 지식을 함양해야 하는지 『인스파이어드』와 『7가지 코드』를 바탕으로 정리했다."
 pubDate: 2024-07-21
 tags: ["PM/PO"]
+heroImage: /images/knowledge/po-core-competencies/01.png
 category: "제품"
 ---
 

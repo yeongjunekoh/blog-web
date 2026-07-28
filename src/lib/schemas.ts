@@ -11,6 +11,7 @@ export const blogSchema = z.object({
   pubDate: z.coerce.date(),
   updatedDate: z.coerce.date().optional(),
   tags: z.array(z.string()).default([]),
+  heroImage: z.string().optional(),
   draft: z.boolean().default(false),
 });
 

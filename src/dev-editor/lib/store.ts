@@ -22,6 +22,7 @@ const KNOWN_FIELD_ORDER = [
   "pubDate",
   "updatedDate",
   "tags",
+  "heroImage",
   "draft",
   "category",
 ] as const;

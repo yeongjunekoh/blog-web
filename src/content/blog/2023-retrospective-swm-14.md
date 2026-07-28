@@ -3,6 +3,7 @@ title: "2023년 회고 | SWM 14기 후기"
 description: "소프트웨어 마에스트로 후기."
 pubDate: 2024-02-12
 tags: ["에세이", "후기", "소프트웨어 마에스트로", "대외활동"]
+heroImage: /images/blog/2023-retrospective-swm-14/01.jpg
 ---
 
 ## 🗣️ 들어가며

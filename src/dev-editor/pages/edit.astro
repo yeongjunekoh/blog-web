@@ -160,6 +160,15 @@ const editorData = entry
                 태그 (콤마 구분)
                 <input id="f-tags" value={tagsText} class="editor-field" />
               </label>
+              <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                대표 이미지 (선택)
+                <input
+                  id="f-heroImage"
+                  value={String(fm.heroImage ?? "")}
+                  placeholder="/images/… — 비우면 OG 카드 폴백"
+                  class="editor-field font-mono"
+                />
+              </label>
               <div class="flex items-center gap-4">
                 {collection === "knowledge" && (
                   <label class="grid flex-1 gap-1 text-xs font-medium text-neutral-500">
@@ -227,6 +236,7 @@ const editorData = entry
           pubDate: $("f-pubDate"),
           updatedDate: $("f-updatedDate"),
           tags: $("f-tags"),
+          heroImage: $("f-heroImage"),
           draft: $("f-draft"),
           category: $("f-category"), // knowledge에서만 존재
           body: $("f-body"),
@@ -262,6 +272,7 @@ const editorData = entry
               .split(",")
               .map((tag) => tag.trim())
               .filter(Boolean),
+            heroImage: els.heroImage.value.trim(),
             draft: els.draft.checked,
           };
           if (els.category) frontmatter.category = els.category.value;
@@ -278,6 +289,7 @@ const editorData = entry
           els.pubDate.value = fm.pubDate ?? "";
           els.updatedDate.value = fm.updatedDate ?? "";
           els.tags.value = (fm.tags ?? []).join(", ");
+          els.heroImage.value = fm.heroImage ?? "";
           els.draft.checked = Boolean(fm.draft);
           if (els.category) els.category.value = fm.category ?? "";
           els.body.value = body ?? "";

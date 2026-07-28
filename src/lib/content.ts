@@ -23,6 +23,14 @@ export async function getPublishedKnowledge(): Promise<KnowledgeEntry[]> {
   return entries.sort(byDateDesc);
 }
 
+/**
+ * 목록에서 쓰는 대표 이미지. frontmatter `heroImage`가 있으면 그것,
+ * 없으면 자동 생성 OG 카드로 폴백 — 모든 글에 대표 이미지가 반드시 존재한다.
+ */
+export function getHeroImage(entry: AnyEntry): string {
+  return entry.data.heroImage ?? `/og/${entry.collection}/${entry.id}.png`;
+}
+
 /** 지식 노트를 카테고리별로 묶는다. 카테고리는 가나다순, 내부 글은 최신순. */
 export function groupByCategory(
   entries: KnowledgeEntry[],

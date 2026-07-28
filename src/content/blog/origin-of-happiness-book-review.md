@@ -3,6 +3,7 @@ title: "『행복의 기원』을 읽고: 나를 알면 행복이 보인다"
 description: "행복의 기원을 읽고 나에게 행복이란 무엇인지 명확하게 바라보고 싶었다."
 pubDate: 2025-06-12
 tags: ["독후감"]
+heroImage: /images/blog/origin-of-happiness-book-review/01.jpg
 ---
 
 ### ❏ 들어가며: ‘행복’이라는 질문에서 출발하다

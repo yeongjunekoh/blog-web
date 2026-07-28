@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import FormattedDate from "../../components/FormattedDate.astro";
+import PostThumb from "../../components/PostThumb.astro";
 import { getPublishedKnowledge, groupByCategory } from "../../lib/content";
 
 const notes = await getPublishedKnowledge();
@@ -36,14 +37,22 @@ const grouped = groupByCategory(notes);
               {entries.map((note) => (
                 <li>
                   <a href={`/knowledge/${note.id}/`} class="group block">
-                    <article>
-                      <h3 class="font-medium group-hover:text-accent">
-                        {note.data.title}
-                      </h3>
-                      <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                        <FormattedDate date={note.data.pubDate} /> ·{" "}
-                        {note.data.description}
-                      </p>
+                    <article class="flex items-start gap-5">
+                      <div class="min-w-0 flex-1">
+                        <h3 class="font-medium group-hover:text-accent">
+                          {note.data.title}
+                        </h3>
+                        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                          <FormattedDate date={note.data.pubDate} /> ·{" "}
+                          {note.data.description}
+                        </p>
+                        {note.data.tags.length > 0 && (
+                          <p class="mt-1.5 text-xs text-neutral-500 dark:text-neutral-500">
+                            {note.data.tags.map((t) => `#${t}`).join(" ")}
+                          </p>
+                        )}
+                      </div>
+                      <PostThumb entry={note} />
                     </article>
                   </a>
                 </li>
