@@ -11,7 +11,7 @@
 
 도메인 확정 시 **`src/consts.ts`의 `SITE_URL` 한 곳만 수정**하면 된다.
 (sitemap, RSS, robots.txt, llms.txt, OG, JSON-LD, canonical 전부 여기서 파생됨)
-현재는 Vercel 예상 URL placeholder: `https://blog-web-kohyeongjune.vercel.app`
+현재 실제 배포 URL (Vercel production, main 브랜치 자동 배포): `https://blog-web-psi-six.vercel.app`
 
 ## 글 작성 방법
 

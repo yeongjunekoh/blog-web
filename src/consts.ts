@@ -4,7 +4,7 @@
  * ⚠️ 도메인 확정 시 SITE_URL만 수정하면 된다.
  * (astro.config.mjs, robots.txt, sitemap, RSS, llms.txt, OG, JSON-LD 전부 여기서 파생)
  */
-export const SITE_URL = "https://blog-web-kohyeongjune.vercel.app";
+export const SITE_URL = "https://blog-web-psi-six.vercel.app";
 
 export const SITE_TITLE = "고영준";
 export const SITE_DESCRIPTION =
