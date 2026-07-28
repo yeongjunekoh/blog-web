@@ -1,0 +1,411 @@
+---
+import "../../styles/global.css";
+import ReloadGuard from "../components/ReloadGuard.astro";
+import { isCollectionName } from "../../lib/schemas";
+import { readEntry, StoreError, type EntryFile } from "../lib/store";
+
+const collection = Astro.params.collection ?? "";
+const slug = Astro.params.slug ?? "";
+
+let entry: EntryFile | null = null;
+let loadError = "";
+
+if (!isCollectionName(collection)) {
+  loadError = `알 수 없는 컬렉션: ${collection}`;
+} else {
+  try {
+    entry = await readEntry(collection, slug);
+  } catch (error) {
+    loadError =
+      error instanceof StoreError ? error.message : "글을 불러올 수 없습니다";
+  }
+}
+
+if (!entry) Astro.response.status = 404;
+
+const fm = (entry?.frontmatter ?? {}) as Record<string, unknown>;
+const asDateString = (value: unknown): string => {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return value == null ? "" : String(value);
+};
+const tagsText = Array.isArray(fm.tags) ? (fm.tags as unknown[]).join(", ") : "";
+const previewPath = `/${collection}/${slug}/`;
+
+// 클라이언트 스크립트로 전달할 데이터. </script> 조기 종료 방지를 위해 < 이스케이프.
+const editorData = entry
+  ? JSON.stringify({
+      collection,
+      slug,
+      ext: entry.ext,
+      mtimeMs: entry.mtimeMs,
+    }).replace(/</g, "\\u003c")
+  : "null";
+---
+
+<html lang="ko" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{entry ? `편집: ${fm.title}` : "글 없음"} (dev)</title>
+    <script is:inline>
+      (() => {
+        const stored = localStorage.getItem("theme");
+        const theme =
+          stored ??
+          (window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light");
+        document.documentElement.classList.toggle("dark", theme === "dark");
+      })();
+    </script>
+    <ReloadGuard />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+  </head>
+  <body
+    class="flex h-full flex-col bg-white font-sans text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100"
+  >
+    {
+      !entry ? (
+        <main class="mx-auto w-full max-w-2xl px-6 py-16">
+          <h1 class="mb-3 text-xl font-bold">글을 찾을 수 없습니다</h1>
+          <p class="mb-6 text-sm text-neutral-500">{loadError}</p>
+          <a href="/_editor" class="text-sm font-medium text-accent">
+            &larr; 편집기 목록으로
+          </a>
+        </main>
+      ) : (
+        <>
+          <header class="flex shrink-0 items-center gap-3 border-b border-neutral-200 px-4 py-2.5 dark:border-neutral-800">
+            <a
+              href="/_editor"
+              class="text-sm text-neutral-500 transition-colors hover:text-accent"
+            >
+              &larr; 목록
+            </a>
+            <span class="min-w-0 flex-1 truncate font-mono text-xs text-neutral-400">
+              src/content/{collection}/{slug}.{entry.ext}
+            </span>
+            <span
+              id="status"
+              data-state="clean"
+              class="text-xs text-neutral-400"
+            >
+              변경 없음
+            </span>
+            <a
+              href={previewPath}
+              target="_blank"
+              rel="noopener"
+              class="rounded border border-neutral-200 px-2.5 py-1 text-xs text-neutral-600 transition-colors hover:text-accent dark:border-neutral-700 dark:text-neutral-300"
+            >
+              새 탭 미리보기
+            </a>
+            <button
+              id="save"
+              type="button"
+              class="rounded bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:text-neutral-950"
+            >
+              저장 <kbd class="ml-1 font-sans text-[10px] opacity-70">⌘S</kbd>
+            </button>
+          </header>
+
+          <div class="flex min-h-0 flex-1">
+            <section
+              class="flex w-[30rem] shrink-0 flex-col gap-3 overflow-y-auto border-r border-neutral-200 p-4 dark:border-neutral-800"
+              aria-label="편집 폼"
+            >
+              <ul
+                id="errors"
+                class="hidden rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400"
+              />
+
+              <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                제목
+                <input
+                  id="f-title"
+                  value={String(fm.title ?? "")}
+                  class="editor-field text-sm font-semibold"
+                />
+              </label>
+              <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                설명
+                <textarea id="f-description" rows="2" class="editor-field">{String(fm.description ?? "")}</textarea>
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                  발행일 (YYYY-MM-DD)
+                  <input
+                    id="f-pubDate"
+                    value={asDateString(fm.pubDate)}
+                    placeholder="2026-07-28"
+                    class="editor-field font-mono"
+                  />
+                </label>
+                <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                  수정일 (선택)
+                  <input
+                    id="f-updatedDate"
+                    value={asDateString(fm.updatedDate)}
+                    placeholder="비우면 제거"
+                    class="editor-field font-mono"
+                  />
+                </label>
+              </div>
+              <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                태그 (콤마 구분)
+                <input id="f-tags" value={tagsText} class="editor-field" />
+              </label>
+              <div class="flex items-center gap-4">
+                {collection === "knowledge" && (
+                  <label class="grid flex-1 gap-1 text-xs font-medium text-neutral-500">
+                    카테고리
+                    <input
+                      id="f-category"
+                      value={String(fm.category ?? "")}
+                      class="editor-field"
+                    />
+                  </label>
+                )}
+                <label class="mt-4 flex items-center gap-1.5 text-xs font-medium text-neutral-500">
+                  <input id="f-draft" type="checkbox" checked={fm.draft === true} class="accent-[var(--accent)]" />
+                  draft (프로덕션 제외)
+                </label>
+              </div>
+              <label class="grid min-h-0 flex-1 gap-1 text-xs font-medium text-neutral-500">
+                본문 ({entry.ext === "mdx" ? "MDX" : "마크다운"})
+                <textarea
+                  id="f-body"
+                  spellcheck="false"
+                  class="editor-field min-h-[24rem] flex-1 resize-y font-mono text-[13px] leading-relaxed"
+                >{entry.body}</textarea>
+              </label>
+              <p class="text-[11px] leading-relaxed text-neutral-400">
+                MDX 문법 오류는 저장 시 잡히지 않습니다 — 오른쪽 미리보기(dev
+                오버레이)가 검증 역할을 합니다. 알 수 없는 frontmatter 필드는
+                저장 시 그대로 보존됩니다.
+              </p>
+            </section>
+
+            <section class="min-w-0 flex-1 bg-neutral-50 dark:bg-neutral-900" aria-label="미리보기">
+              <iframe
+                id="preview"
+                src={previewPath}
+                title="미리보기"
+                class="h-full w-full border-0"
+              />
+            </section>
+          </div>
+
+          <script
+            type="application/json"
+            id="editor-data"
+            set:html={editorData}
+          />
+        </>
+      )
+    }
+
+    <script>
+      const dataEl = document.getElementById("editor-data");
+      if (dataEl) init(JSON.parse(dataEl.textContent));
+
+      function init({ collection, slug, mtimeMs: initialMtime }) {
+        let mtimeMs = initialMtime;
+        let dirty = false;
+        let saving = false;
+        const storageKey = `dev-editor:${collection}/${slug}`;
+
+        const $ = (id) => document.getElementById(id);
+        const els = {
+          title: $("f-title"),
+          description: $("f-description"),
+          pubDate: $("f-pubDate"),
+          updatedDate: $("f-updatedDate"),
+          tags: $("f-tags"),
+          draft: $("f-draft"),
+          category: $("f-category"), // knowledge에서만 존재
+          body: $("f-body"),
+          status: $("status"),
+          errors: $("errors"),
+          save: $("save"),
+          preview: $("preview"),
+        };
+
+        // e2e 실측용: full reload가 일어나면 이 토큰이 사라진다
+        // (full-reload 차단 자체는 head의 인라인 WebSocket 패치가 담당)
+        window.__devEditorToken = Math.random().toString(36).slice(2);
+
+        // ---- 미저장 스냅샷 복원 (full reload가 뚫렸을 때의 2차 방어)
+        try {
+          const snapshot = sessionStorage.getItem(storageKey);
+          if (snapshot) {
+            applySnapshot(JSON.parse(snapshot));
+            setDirty(true);
+            setStatus("복원됨 (미저장 변경사항)", "dirty");
+          }
+        } catch {
+          sessionStorage.removeItem(storageKey);
+        }
+
+        function collectFrontmatter() {
+          const frontmatter = {
+            title: els.title.value,
+            description: els.description.value,
+            pubDate: els.pubDate.value.trim(),
+            updatedDate: els.updatedDate.value.trim(),
+            tags: els.tags.value
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter(Boolean),
+            draft: els.draft.checked,
+          };
+          if (els.category) frontmatter.category = els.category.value;
+          return frontmatter;
+        }
+
+        function snapshotState() {
+          return { frontmatter: collectFrontmatter(), body: els.body.value };
+        }
+
+        function applySnapshot({ frontmatter: fm, body }) {
+          els.title.value = fm.title ?? "";
+          els.description.value = fm.description ?? "";
+          els.pubDate.value = fm.pubDate ?? "";
+          els.updatedDate.value = fm.updatedDate ?? "";
+          els.tags.value = (fm.tags ?? []).join(", ");
+          els.draft.checked = Boolean(fm.draft);
+          if (els.category) els.category.value = fm.category ?? "";
+          els.body.value = body ?? "";
+        }
+
+        function setStatus(text, state) {
+          els.status.textContent = text;
+          els.status.dataset.state = state;
+          els.status.className =
+            "text-xs " +
+            (state === "error"
+              ? "text-red-600 dark:text-red-400"
+              : state === "dirty"
+                ? "text-amber-600 dark:text-amber-400"
+                : state === "saved"
+                  ? "text-accent"
+                  : "text-neutral-400");
+        }
+
+        function setDirty(next) {
+          dirty = next;
+          if (dirty) setStatus("수정됨 (미저장)", "dirty");
+        }
+
+        function showErrors(issues) {
+          els.errors.innerHTML = "";
+          for (const issue of issues) {
+            const li = document.createElement("li");
+            li.textContent = `${issue.path}: ${issue.message}`;
+            els.errors.appendChild(li);
+          }
+          els.errors.classList.toggle("hidden", issues.length === 0);
+        }
+
+        async function save() {
+          if (saving) return;
+          saving = true;
+          els.save.disabled = true;
+          setStatus("저장 중…", "saving");
+          showErrors([]);
+          try {
+            const res = await fetch(`/_editor/api/${collection}/${slug}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Dev-Editor": "1",
+              },
+              body: JSON.stringify({
+                ...snapshotState(),
+                baseMtimeMs: mtimeMs,
+              }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+              mtimeMs = data.mtimeMs;
+              sessionStorage.removeItem(storageKey);
+              dirty = false;
+              setStatus(
+                `저장됨 ${new Date().toLocaleTimeString("ko-KR")}`,
+                "saved",
+              );
+              // 미리보기 갱신 (Vite 자동 reload가 있어도 무해한 폴백)
+              setTimeout(() => {
+                try {
+                  els.preview.contentWindow.location.reload();
+                } catch {
+                  els.preview.src = els.preview.src;
+                }
+              }, 400);
+            } else if (res.status === 400 && data.issues) {
+              showErrors(data.issues);
+              setStatus("검증 실패", "error");
+            } else if (res.status === 409) {
+              setStatus("충돌: 파일이 외부에서 수정됨 — 새로고침 필요", "error");
+              showErrors([{ path: "파일", message: data.error }]);
+            } else {
+              setStatus(data.error ?? `저장 실패 (HTTP ${res.status})`, "error");
+            }
+          } catch (error) {
+            setStatus(`저장 실패: ${error.message}`, "error");
+          } finally {
+            saving = false;
+            els.save.disabled = false;
+          }
+        }
+
+        // 입력 → dirty + 스냅샷
+        for (const el of Object.values(els)) {
+          if (!el || !/^f-/.test(el.id ?? "")) continue;
+          el.addEventListener("input", () => {
+            setDirty(true);
+            try {
+              sessionStorage.setItem(storageKey, JSON.stringify(snapshotState()));
+            } catch {}
+          });
+        }
+
+        els.save.addEventListener("click", save);
+        document.addEventListener("keydown", (event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key === "s") {
+            event.preventDefault();
+            save();
+          }
+        });
+        window.addEventListener("beforeunload", (event) => {
+          if (dirty) event.preventDefault();
+        });
+      }
+    </script>
+
+    <style is:global>
+      .editor-field {
+        width: 100%;
+        border: 1px solid #d4d4d4;
+        border-radius: 6px;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.875rem;
+        color: inherit;
+        background: transparent;
+      }
+      .editor-field:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+        border-color: transparent;
+      }
+      .dark .editor-field {
+        border-color: #404040;
+      }
+    </style>
+  </body>
+</html>

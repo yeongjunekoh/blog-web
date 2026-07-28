@@ -59,6 +59,19 @@ function isCurrent(href: string): boolean {
               </li>
             ))
           }
+          {
+            /* dev 전용 편집기 링크: 빌드 시 정적으로 false가 되어 dist에 흔적이 남지 않음 */
+            import.meta.env.DEV && (
+              <li>
+                <a
+                  href="/_editor"
+                  class="rounded border border-dashed border-neutral-300 px-2 py-1 text-neutral-500 transition-colors hover:text-accent sm:px-2.5 dark:border-neutral-700 dark:text-neutral-400"
+                >
+                  편집
+                </a>
+              </li>
+            )
+          }
         </ul>
       </nav>
       <ThemeToggle />

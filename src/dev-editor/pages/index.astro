@@ -1,0 +1,268 @@
+---
+import "../../styles/global.css";
+import ReloadGuard from "../components/ReloadGuard.astro";
+import { COLLECTION_NAMES } from "../../lib/schemas";
+import { listEntries } from "../lib/store";
+
+const LABELS: Record<string, string> = { blog: "블로그", knowledge: "지식 노트" };
+
+const sections = await Promise.all(
+  COLLECTION_NAMES.map(async (name) => ({
+    name,
+    label: LABELS[name] ?? name,
+    entries: await listEntries(name),
+  })),
+);
+---
+
+<html lang="ko" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>콘텐츠 편집기 (dev)</title>
+    <!-- 다크모드 FOUC 방지 (사이트와 동일한 로직) -->
+    <script is:inline>
+      (() => {
+        const stored = localStorage.getItem("theme");
+        const theme =
+          stored ??
+          (window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light");
+        document.documentElement.classList.toggle("dark", theme === "dark");
+      })();
+    </script>
+    <ReloadGuard />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+  </head>
+  <body
+    class="min-h-full bg-white font-sans text-neutral-900 antialiased transition-colors dark:bg-neutral-950 dark:text-neutral-100"
+  >
+    <header
+      class="border-b border-neutral-200 bg-white/80 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/80"
+    >
+      <div
+        class="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-5"
+      >
+        <h1 class="flex items-center gap-2 text-base font-bold tracking-tight">
+          콘텐츠 편집기
+          <span
+            class="rounded bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-white dark:text-neutral-950"
+            >dev 전용</span
+          >
+        </h1>
+        <a
+          href="/"
+          class="text-sm text-neutral-600 hover:text-accent dark:text-neutral-400"
+          >사이트로 &rarr;</a
+        >
+      </div>
+    </header>
+
+    <main class="mx-auto w-full max-w-3xl px-6 py-10">
+      {
+        sections.map(({ name, label, entries }) => (
+          <section class="mb-12" data-collection-section={name}>
+            <div class="mb-3 flex items-center justify-between">
+              <h2 class="text-lg font-bold tracking-tight">
+                {label}
+                <span class="ml-1 text-sm font-normal text-neutral-400">
+                  {entries.length}
+                </span>
+              </h2>
+            </div>
+
+            {entries.length === 0 ? (
+              <p class="mb-4 rounded border border-dashed border-neutral-300 px-4 py-6 text-center text-sm text-neutral-400 dark:border-neutral-700">
+                아직 글이 없습니다
+              </p>
+            ) : (
+              <ul class="mb-4 divide-y divide-neutral-100 border-y border-neutral-200 dark:divide-neutral-800/60 dark:border-neutral-800">
+                {entries.map((entry) => (
+                  <li class="flex items-center gap-3 py-3" data-entry-row>
+                    <a
+                      href={`/_editor/${name}/${entry.slug}`}
+                      class="group min-w-0 flex-1"
+                    >
+                      <span class="block truncate text-sm font-semibold group-hover:text-accent">
+                        {entry.title}
+                      </span>
+                      <span class="mt-0.5 block truncate font-mono text-xs text-neutral-500 dark:text-neutral-400">
+                        {entry.slug}.{entry.ext}
+                        {entry.category && ` · ${entry.category}`}
+                      </span>
+                    </a>
+                    <time class="shrink-0 text-xs text-neutral-400 tabular-nums">
+                      {entry.pubDate}
+                    </time>
+                    {entry.draft && (
+                      <span class="shrink-0 rounded border border-amber-500/40 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                        draft
+                      </span>
+                    )}
+                    <span class="shrink-0 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[11px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+                      {entry.ext}
+                    </span>
+                    <button
+                      type="button"
+                      data-delete
+                      data-collection={name}
+                      data-slug={entry.slug}
+                      data-title={entry.title}
+                      class="shrink-0 rounded px-2 py-1 text-xs text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                    >
+                      삭제
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <details class="group rounded border border-neutral-200 dark:border-neutral-800">
+              <summary class="cursor-pointer select-none px-4 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:text-accent dark:text-neutral-400">
+                + 새 글
+              </summary>
+              <form
+                data-create
+                data-collection={name}
+                class="grid gap-3 border-t border-neutral-200 px-4 py-4 dark:border-neutral-800"
+              >
+                <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                  slug (kebab-case 영문 = URL/파일명)
+                  <input
+                    name="slug"
+                    required
+                    pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                    placeholder="my-first-post"
+                    class="editor-field font-mono"
+                  />
+                </label>
+                <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                  제목
+                  <input name="title" required class="editor-field" />
+                </label>
+                <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                  설명 (한두 문장 요약)
+                  <input name="description" required class="editor-field" />
+                </label>
+                {name === "knowledge" && (
+                  <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                    카테고리
+                    <input
+                      name="category"
+                      required
+                      placeholder="웹"
+                      class="editor-field"
+                    />
+                  </label>
+                )}
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-1.5 text-xs font-medium text-neutral-500">
+                    확장자
+                    <select name="ext" class="editor-field w-auto font-mono">
+                      <option value="md">md</option>
+                      <option value="mdx">mdx</option>
+                    </select>
+                  </label>
+                  <button
+                    type="submit"
+                    class="ml-auto rounded bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 dark:text-neutral-950"
+                  >
+                    만들기 (draft)
+                  </button>
+                </div>
+                <p
+                  data-form-error
+                  class="hidden text-xs text-red-600 dark:text-red-400"
+                >
+                </p>
+              </form>
+            </details>
+          </section>
+        ))
+      }
+      <p class="text-xs text-neutral-400">
+        이 화면은 <code class="font-mono">astro dev</code>에서만 존재합니다.
+        프로덕션 빌드에는 어떤 흔적도 포함되지 않습니다.
+      </p>
+    </main>
+
+    <script>
+      const HEADERS = {
+        "Content-Type": "application/json",
+        "X-Dev-Editor": "1",
+      };
+
+      // 새 글 생성
+      for (const form of document.querySelectorAll("form[data-create]")) {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const collection = form.getAttribute("data-collection");
+          const fd = new FormData(form);
+          const payload = Object.fromEntries(fd.entries());
+          const errorEl = form.querySelector("[data-form-error]");
+          errorEl.classList.add("hidden");
+          try {
+            const res = await fetch(`/_editor/api/${collection}`, {
+              method: "POST",
+              headers: HEADERS,
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+            location.href = `/_editor/${collection}/${data.slug}`;
+          } catch (error) {
+            errorEl.textContent = error.message;
+            errorEl.classList.remove("hidden");
+          }
+        });
+      }
+
+      // 삭제
+      for (const button of document.querySelectorAll("button[data-delete]")) {
+        button.addEventListener("click", async () => {
+          const collection = button.getAttribute("data-collection");
+          const slug = button.getAttribute("data-slug");
+          const title = button.getAttribute("data-title");
+          if (!confirm(`"${title}" (${slug})을(를) 삭제할까요?\n파일이 즉시 지워집니다.`))
+            return;
+          const res = await fetch(`/_editor/api/${collection}/${slug}`, {
+            method: "DELETE",
+            headers: HEADERS,
+          });
+          if (res.ok) {
+            button.closest("[data-entry-row]")?.remove();
+          } else {
+            const data = await res.json().catch(() => ({}));
+            alert(data.error ?? `삭제 실패 (HTTP ${res.status})`);
+          }
+        });
+      }
+    </script>
+
+    <style is:global>
+      .editor-field {
+        width: 100%;
+        border: 1px solid var(--color-neutral-300, #d4d4d4);
+        border-radius: 6px;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.875rem;
+        color: inherit;
+        background: transparent;
+      }
+      .editor-field:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+        border-color: transparent;
+      }
+      .dark .editor-field {
+        border-color: #404040;
+      }
+    </style>
+  </body>
+</html>

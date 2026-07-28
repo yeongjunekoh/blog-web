@@ -1,0 +1,73 @@
+---
+/**
+ * 함정 1 대응 (실측 결과: 콘텐츠 파일을 저장/생성/삭제하면 dev 서버가 모든
+ * 클라이언트에 "full-reload"를 브로드캐스트 → 편집 화면까지 새로고침됨).
+ *
+ * Vite 6.4의 notifyListeners는 Promise.allSettled로 리스너를 호출하므로
+ * `hot.on("vite:beforeFullReload", () => { throw ... })` 트릭으로는 reload를
+ * 막을 수 없다. 대신 /@vite/client(모듈 스크립트, deferred)보다 먼저 실행되는
+ * 이 인라인 클래식 스크립트에서 WebSocket을 패치해, vite-hmr 소켓의
+ * "full-reload" 메시지만 무시한다.
+ *
+ * iframe 미리보기는 별도 문서/소켓이라 영향받지 않고 정상적으로 자동
+ * 새로고침된다. `?noguard=1`을 붙이면 패치를 건너뛰어 원 동작을 실측할 수 있다.
+ */
+---
+
+<script is:inline>
+  (() => {
+    if (new URLSearchParams(location.search).has("noguard")) return;
+    const NativeWebSocket = window.WebSocket;
+    const isViteHmr = (protocols) =>
+      protocols === "vite-hmr" ||
+      (Array.isArray(protocols) && protocols.includes("vite-hmr"));
+
+    function PatchedWebSocket(url, protocols) {
+      const ws = new NativeWebSocket(url, protocols);
+      if (!isViteHmr(protocols)) return ws;
+
+      const nativeAdd = ws.addEventListener.bind(ws);
+      const wrap = (listener) =>
+        function (event) {
+          try {
+            if (JSON.parse(event.data).type === "full-reload") {
+              console.info("[dev-editor] 편집 상태 보호: full-reload 무시");
+              return;
+            }
+          } catch (_) {
+            /* JSON이 아니면 그대로 전달 */
+          }
+          return typeof listener === "function"
+            ? listener.call(this, event)
+            : listener.handleEvent(event);
+        };
+      ws.addEventListener = function (type, listener, options) {
+        return nativeAdd(
+          type,
+          type === "message" && listener ? wrap(listener) : listener,
+          options,
+        );
+      };
+      let userOnMessage = null;
+      Object.defineProperty(ws, "onmessage", {
+        configurable: true,
+        get: () => userOnMessage,
+        set: (fn) => {
+          if (!userOnMessage && fn) {
+            nativeAdd(
+              "message",
+              wrap((event) => userOnMessage?.(event)),
+            );
+          }
+          userOnMessage = fn;
+        },
+      });
+      return ws;
+    }
+    PatchedWebSocket.prototype = NativeWebSocket.prototype;
+    for (const key of ["CONNECTING", "OPEN", "CLOSING", "CLOSED"]) {
+      PatchedWebSocket[key] = NativeWebSocket[key];
+    }
+    window.WebSocket = PatchedWebSocket;
+  })();
+</script>
