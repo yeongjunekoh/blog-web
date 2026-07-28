@@ -7,7 +7,7 @@ tags: ["독후감"]
 
 ### ❏ 들어가며: ‘행복’이라는 질문에서 출발하다
 
-![창가에 놓인 『행복의 기원』 책 표지](/images/blog/origin-of-happiness-book-review/01.png)
+![창가에 놓인 『행복의 기원』 책 표지](/images/blog/origin-of-happiness-book-review/01.jpg)
 
 > **“인간의 행복은 어디에서 오는가?”**
 
