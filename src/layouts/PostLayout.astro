@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "./BaseLayout.astro";
+import Comments from "../components/Comments.astro";
 import FormattedDate from "../components/FormattedDate.astro";
 import { AUTHOR_NAME, SITE_URL } from "../consts";
 import type { AnyEntry } from "../lib/content";
@@ -96,4 +97,6 @@ const jsonLd = {
       </p>
     </footer>
   </article>
+
+  <Comments />
 </BaseLayout>

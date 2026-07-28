@@ -44,5 +44,13 @@
   button?.addEventListener("click", () => {
     const isDark = document.documentElement.classList.toggle("dark");
     localStorage.setItem("theme", isDark ? "dark" : "light");
+
+    // giscus iframe이 있으면 테마 동기화
+    document
+      .querySelector<HTMLIFrameElement>("iframe.giscus-frame")
+      ?.contentWindow?.postMessage(
+        { giscus: { setConfig: { theme: isDark ? "dark" : "light" } } },
+        "https://giscus.app",
+      );
   });
 </script>
