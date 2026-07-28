@@ -7,7 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.14",
@@ -25,5 +26,8 @@
     "satori": "^0.28.1",
     "tailwindcss": "^4.3.3",
     "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0"
   }
 }
