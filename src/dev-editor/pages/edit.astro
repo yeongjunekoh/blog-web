@@ -31,6 +31,10 @@ const asDateString = (value: unknown): string => {
 const tagsText = Array.isArray(fm.tags) ? (fm.tags as unknown[]).join(", ") : "";
 const previewPath = `/${collection}/${slug}/`;
 
+// 사이트 본문(PostLayout)과 동일한 prose 클래스 — WYSIWYG 영역에 그대로 적용
+const proseClass =
+  "prose prose-neutral dark:prose-invert max-w-none prose-headings:tracking-tight prose-a:text-accent prose-a:decoration-accent/40 prose-a:underline-offset-4 hover:prose-a:decoration-accent";
+
 // 클라이언트 스크립트로 전달할 데이터. </script> 조기 종료 방지를 위해 < 이스케이프.
 const editorData = entry
   ? JSON.stringify({
@@ -38,6 +42,8 @@ const editorData = entry
       slug,
       ext: entry.ext,
       mtimeMs: entry.mtimeMs,
+      body: entry.body,
+      proseClass,
     }).replace(/</g, "\\u003c")
   : "null";
 ---
@@ -97,6 +103,22 @@ const editorData = entry
             >
               변경 없음
             </span>
+            <button
+              id="mode-toggle"
+              type="button"
+              data-mode="wysiwyg"
+              class="rounded border border-neutral-200 px-2.5 py-1 text-xs text-neutral-600 transition-colors hover:text-accent dark:border-neutral-700 dark:text-neutral-300"
+            >
+              원문 (MD)
+            </button>
+            <button
+              id="preview-toggle"
+              type="button"
+              aria-pressed="false"
+              class="rounded border border-neutral-200 px-2.5 py-1 text-xs text-neutral-600 transition-colors hover:text-accent dark:border-neutral-700 dark:text-neutral-300"
+            >
+              미리보기
+            </button>
             <a
               href={previewPath}
               target="_blank"
@@ -116,91 +138,118 @@ const editorData = entry
 
           <div class="flex min-h-0 flex-1">
             <section
-              class="flex w-[30rem] shrink-0 flex-col gap-3 overflow-y-auto border-r border-neutral-200 p-4 dark:border-neutral-800"
-              aria-label="편집 폼"
+              id="edit-pane"
+              class="min-w-0 flex-1 overflow-y-auto"
+              aria-label="편집"
             >
-              <ul
-                id="errors"
-                class="hidden rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400"
-              />
+              <div class="mx-auto w-full max-w-2xl px-6 py-10">
+                <ul
+                  id="errors"
+                  class="mb-4 hidden rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400"
+                />
+                <p
+                  id="rt-warning"
+                  class="mb-4 hidden rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+                />
 
-              <label class="grid gap-1 text-xs font-medium text-neutral-500">
-                제목
+                <details
+                  id="fm-panel"
+                  class="mb-6 rounded-lg border border-neutral-200 dark:border-neutral-800"
+                >
+                  <summary class="cursor-pointer select-none px-4 py-2.5 text-xs font-medium text-neutral-500 hover:text-accent">
+                    frontmatter (설명 · 날짜 · 태그 · draft)
+                  </summary>
+                  <div class="grid gap-3 border-t border-neutral-200 p-4 dark:border-neutral-800">
+                    <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                      설명
+                      <textarea id="f-description" rows="2" class="editor-field">{String(fm.description ?? "")}</textarea>
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                      <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                        발행일 (YYYY-MM-DD)
+                        <input
+                          id="f-pubDate"
+                          value={asDateString(fm.pubDate)}
+                          placeholder="2026-07-28"
+                          class="editor-field font-mono"
+                        />
+                      </label>
+                      <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                        수정일 (선택)
+                        <input
+                          id="f-updatedDate"
+                          value={asDateString(fm.updatedDate)}
+                          placeholder="비우면 제거"
+                          class="editor-field font-mono"
+                        />
+                      </label>
+                    </div>
+                    <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                      태그 (콤마 구분)
+                      <input id="f-tags" value={tagsText} class="editor-field" />
+                    </label>
+                    <label class="grid gap-1 text-xs font-medium text-neutral-500">
+                      대표 이미지 (선택)
+                      <input
+                        id="f-heroImage"
+                        value={String(fm.heroImage ?? "")}
+                        placeholder="/images/… — 비우면 OG 카드 폴백"
+                        class="editor-field font-mono"
+                      />
+                    </label>
+                    <div class="flex items-center gap-4">
+                      {collection === "knowledge" && (
+                        <label class="grid flex-1 gap-1 text-xs font-medium text-neutral-500">
+                          카테고리
+                          <input
+                            id="f-category"
+                            value={String(fm.category ?? "")}
+                            class="editor-field"
+                          />
+                        </label>
+                      )}
+                      <label class="flex items-center gap-1.5 text-xs font-medium text-neutral-500">
+                        <input
+                          id="f-draft"
+                          type="checkbox"
+                          checked={fm.draft === true}
+                          class="accent-[var(--accent)]"
+                        />
+                        draft (프로덕션 제외)
+                      </label>
+                    </div>
+                  </div>
+                </details>
+
                 <input
                   id="f-title"
                   value={String(fm.title ?? "")}
-                  class="editor-field text-sm font-semibold"
+                  placeholder="제목"
+                  class="mb-8 w-full bg-transparent text-3xl leading-tight font-bold tracking-tight outline-none placeholder:text-neutral-300 dark:placeholder:text-neutral-700"
                 />
-              </label>
-              <label class="grid gap-1 text-xs font-medium text-neutral-500">
-                설명
-                <textarea id="f-description" rows="2" class="editor-field">{String(fm.description ?? "")}</textarea>
-              </label>
-              <div class="grid grid-cols-2 gap-3">
-                <label class="grid gap-1 text-xs font-medium text-neutral-500">
-                  발행일 (YYYY-MM-DD)
-                  <input
-                    id="f-pubDate"
-                    value={asDateString(fm.pubDate)}
-                    placeholder="2026-07-28"
-                    class="editor-field font-mono"
-                  />
-                </label>
-                <label class="grid gap-1 text-xs font-medium text-neutral-500">
-                  수정일 (선택)
-                  <input
-                    id="f-updatedDate"
-                    value={asDateString(fm.updatedDate)}
-                    placeholder="비우면 제거"
-                    class="editor-field font-mono"
-                  />
-                </label>
-              </div>
-              <label class="grid gap-1 text-xs font-medium text-neutral-500">
-                태그 (콤마 구분)
-                <input id="f-tags" value={tagsText} class="editor-field" />
-              </label>
-              <label class="grid gap-1 text-xs font-medium text-neutral-500">
-                대표 이미지 (선택)
-                <input
-                  id="f-heroImage"
-                  value={String(fm.heroImage ?? "")}
-                  placeholder="/images/… — 비우면 OG 카드 폴백"
-                  class="editor-field font-mono"
-                />
-              </label>
-              <div class="flex items-center gap-4">
-                {collection === "knowledge" && (
-                  <label class="grid flex-1 gap-1 text-xs font-medium text-neutral-500">
-                    카테고리
-                    <input
-                      id="f-category"
-                      value={String(fm.category ?? "")}
-                      class="editor-field"
-                    />
-                  </label>
-                )}
-                <label class="mt-4 flex items-center gap-1.5 text-xs font-medium text-neutral-500">
-                  <input id="f-draft" type="checkbox" checked={fm.draft === true} class="accent-[var(--accent)]" />
-                  draft (프로덕션 제외)
-                </label>
-              </div>
-              <label class="grid min-h-0 flex-1 gap-1 text-xs font-medium text-neutral-500">
-                본문 ({entry.ext === "mdx" ? "MDX" : "마크다운"})
+
+                <div id="wysiwyg" class="min-h-[24rem]" />
                 <textarea
                   id="f-body"
                   spellcheck="false"
-                  class="editor-field min-h-[24rem] flex-1 resize-y font-mono text-[13px] leading-relaxed"
+                  class="editor-field hidden min-h-[60vh] w-full resize-y font-mono text-[13px] leading-relaxed"
                 >{entry.body}</textarea>
-              </label>
-              <p class="text-[11px] leading-relaxed text-neutral-400">
-                MDX 문법 오류는 저장 시 잡히지 않습니다 — 오른쪽 미리보기(dev
-                오버레이)가 검증 역할을 합니다. 알 수 없는 frontmatter 필드는
-                저장 시 그대로 보존됩니다.
-              </p>
+
+                <p class="mt-8 text-[11px] leading-relaxed text-neutral-400">
+                  저장은 3-way 병합으로 수행되어 수정하지 않은 부분의 마크다운
+                  원문 바이트가 그대로 보존됩니다. MDX 문법 오류는 저장 시
+                  잡히지 않습니다 — 미리보기(dev 오버레이)가 검증 역할을
+                  합니다. 알 수 없는 frontmatter 필드는 저장 시 그대로
+                  보존됩니다.
+                </p>
+              </div>
             </section>
 
-            <section class="min-w-0 flex-1 bg-neutral-50 dark:bg-neutral-900" aria-label="미리보기">
+            <section
+              id="preview-pane"
+              class="hidden w-[46%] shrink-0 border-l border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900"
+              aria-label="미리보기"
+            >
               <iframe
                 id="preview"
                 src={previewPath}
@@ -220,13 +269,27 @@ const editorData = entry
     }
 
     <script>
+      import {
+        checkRoundtrip,
+        createWysiwyg,
+        mergeMarkdown,
+        serializeMarkdown,
+        setMarkdown,
+      } from "../lib/wysiwyg";
+
       const dataEl = document.getElementById("editor-data");
       if (dataEl) init(JSON.parse(dataEl.textContent));
 
-      function init({ collection, slug, mtimeMs: initialMtime }) {
+      function init({ collection, slug, ext, mtimeMs: initialMtime, body, proseClass }) {
         let mtimeMs = initialMtime;
         let dirty = false;
         let saving = false;
+        let mode = "source"; // 초기화 후 wysiwyg로 전환 시도
+        // 3-way 병합 기준선: original = 디스크 원문(또는 원문 모드에서 넘어온
+        // 텍스트), base = original을 파스→직렬화한 정규화본
+        let original = body;
+        let base = "";
+        let editor = null;
         const storageKey = `dev-editor:${collection}/${slug}`;
 
         const $ = (id) => document.getElementById(id);
@@ -244,22 +307,110 @@ const editorData = entry
           errors: $("errors"),
           save: $("save"),
           preview: $("preview"),
+          previewPane: $("preview-pane"),
+          previewToggle: $("preview-toggle"),
+          modeToggle: $("mode-toggle"),
+          rtWarning: $("rt-warning"),
+          wysiwyg: $("wysiwyg"),
+          fmPanel: $("fm-panel"),
         };
 
         // e2e 실측용: full reload가 일어나면 이 토큰이 사라진다
         // (full-reload 차단 자체는 head의 인라인 WebSocket 패치가 담당)
         window.__devEditorToken = Math.random().toString(36).slice(2);
 
-        // ---- 미저장 스냅샷 복원 (full reload가 뚫렸을 때의 2차 방어)
+        // ---- WYSIWYG 초기화 (.mdx는 원문 전용) ----
+        let wysiwygDisabledReason = "";
+        if (ext === "mdx") {
+          wysiwygDisabledReason =
+            "MDX 파일은 WYSIWYG를 지원하지 않습니다 — 원문 모드로만 편집됩니다.";
+        } else {
+          try {
+            editor = createWysiwyg({
+              element: els.wysiwyg,
+              content: "",
+              editorClass: proseClass,
+              onUpdate: () => {
+                if (mode === "wysiwyg") markDirty();
+              },
+            });
+            const check = checkRoundtrip(editor, original);
+            base = check.base;
+            if (!check.stable) {
+              showWarning(
+                "이 글은 마크다운 왕복 변환이 불안정한 구문을 포함합니다 — 원문 모드 편집을 권장합니다. (수정하지 않은 줄은 저장 시 그대로 보존됩니다)",
+              );
+            } else {
+              enterWysiwyg({ initial: true });
+            }
+          } catch (error) {
+            editor = null;
+            wysiwygDisabledReason = `WYSIWYG 초기화 실패: ${error.message} — 원문 모드로 편집하세요.`;
+          }
+        }
+        if (wysiwygDisabledReason) showWarning(wysiwygDisabledReason);
+        applyModeUI();
+
+        // ---- 미저장 스냅샷 복원 (full reload가 뚫렸을 때의 2차 방어) ----
         try {
           const snapshot = sessionStorage.getItem(storageKey);
           if (snapshot) {
             applySnapshot(JSON.parse(snapshot));
-            setDirty(true);
+            markDirty();
             setStatus("복원됨 (미저장 변경사항)", "dirty");
           }
         } catch {
           sessionStorage.removeItem(storageKey);
+        }
+
+        // ---- 모드 전환 ----
+        function enterWysiwyg({ initial = false } = {}) {
+          if (!editor) return;
+          if (!initial) {
+            // 원문 모드에서 편집된 텍스트를 새 기준선으로 삼는다
+            original = els.body.value;
+            setMarkdown(editor, original);
+            base = serializeMarkdown(editor);
+          } else {
+            setMarkdown(editor, original);
+          }
+          mode = "wysiwyg";
+          applyModeUI();
+        }
+
+        function enterSource() {
+          if (mode === "wysiwyg") els.body.value = currentBody();
+          mode = "source";
+          applyModeUI();
+        }
+
+        function applyModeUI() {
+          const isWysiwyg = mode === "wysiwyg";
+          els.wysiwyg.classList.toggle("hidden", !isWysiwyg);
+          els.body.classList.toggle("hidden", isWysiwyg);
+          els.modeToggle.dataset.mode = mode;
+          els.modeToggle.textContent = isWysiwyg ? "원문 (MD)" : "WYSIWYG";
+          els.modeToggle.disabled = !editor;
+        }
+
+        els.modeToggle.addEventListener("click", () => {
+          if (mode === "wysiwyg") enterSource();
+          else enterWysiwyg();
+        });
+
+        // ---- 미리보기 토글 ----
+        els.previewToggle.addEventListener("click", () => {
+          const show = els.previewPane.classList.toggle("hidden") === false;
+          els.previewToggle.setAttribute("aria-pressed", String(show));
+        });
+
+        // ---- 본문/폼 수집 ----
+        /** 저장될 본문. WYSIWYG 모드에서는 3-way 병합으로 원문 바이트 보존 */
+        function currentBody() {
+          if (mode === "wysiwyg" && editor) {
+            return mergeMarkdown(original, base, serializeMarkdown(editor));
+          }
+          return els.body.value;
         }
 
         function collectFrontmatter() {
@@ -280,10 +431,10 @@ const editorData = entry
         }
 
         function snapshotState() {
-          return { frontmatter: collectFrontmatter(), body: els.body.value };
+          return { frontmatter: collectFrontmatter(), body: currentBody() };
         }
 
-        function applySnapshot({ frontmatter: fm, body }) {
+        function applySnapshot({ frontmatter: fm, body: snapBody }) {
           els.title.value = fm.title ?? "";
           els.description.value = fm.description ?? "";
           els.pubDate.value = fm.pubDate ?? "";
@@ -292,9 +443,11 @@ const editorData = entry
           els.heroImage.value = fm.heroImage ?? "";
           els.draft.checked = Boolean(fm.draft);
           if (els.category) els.category.value = fm.category ?? "";
-          els.body.value = body ?? "";
+          els.body.value = snapBody ?? "";
+          if (mode === "wysiwyg" && editor) setMarkdown(editor, snapBody ?? "");
         }
 
+        // ---- 상태 표시 ----
         function setStatus(text, state) {
           els.status.textContent = text;
           els.status.dataset.state = state;
@@ -309,9 +462,22 @@ const editorData = entry
                   : "text-neutral-400");
         }
 
-        function setDirty(next) {
-          dirty = next;
-          if (dirty) setStatus("수정됨 (미저장)", "dirty");
+        function showWarning(text) {
+          els.rtWarning.textContent = text;
+          els.rtWarning.classList.remove("hidden");
+        }
+
+        let snapshotTimer = 0;
+        function markDirty() {
+          dirty = true;
+          setStatus("수정됨 (미저장)", "dirty");
+          clearTimeout(snapshotTimer);
+          snapshotTimer = setTimeout(() => {
+            if (!dirty) return; // 저장 완료 후 뒤늦게 스냅샷이 남는 것 방지
+            try {
+              sessionStorage.setItem(storageKey, JSON.stringify(snapshotState()));
+            } catch {}
+          }, 400);
         }
 
         function showErrors(issues) {
@@ -322,8 +488,10 @@ const editorData = entry
             els.errors.appendChild(li);
           }
           els.errors.classList.toggle("hidden", issues.length === 0);
+          if (issues.length > 0) els.fmPanel.open = true;
         }
 
+        // ---- 저장 ----
         async function save() {
           if (saving) return;
           saving = true;
@@ -331,6 +499,7 @@ const editorData = entry
           setStatus("저장 중…", "saving");
           showErrors([]);
           try {
+            const bodyText = currentBody();
             const res = await fetch(`/_editor/api/${collection}/${slug}`, {
               method: "PUT",
               headers: {
@@ -338,13 +507,22 @@ const editorData = entry
                 "X-Dev-Editor": "1",
               },
               body: JSON.stringify({
-                ...snapshotState(),
+                frontmatter: collectFrontmatter(),
+                body: bodyText,
                 baseMtimeMs: mtimeMs,
               }),
             });
             const data = await res.json();
             if (res.ok) {
               mtimeMs = data.mtimeMs;
+              // 저장된 본문을 새 병합 기준선으로
+              original = bodyText;
+              if (mode === "wysiwyg" && editor) {
+                base = serializeMarkdown(editor);
+              } else {
+                els.body.value = bodyText;
+              }
+              clearTimeout(snapshotTimer);
               sessionStorage.removeItem(storageKey);
               dirty = false;
               setStatus(
@@ -376,15 +554,10 @@ const editorData = entry
           }
         }
 
-        // 입력 → dirty + 스냅샷
+        // ---- 입력 이벤트 ----
         for (const el of Object.values(els)) {
           if (!el || !/^f-/.test(el.id ?? "")) continue;
-          el.addEventListener("input", () => {
-            setDirty(true);
-            try {
-              sessionStorage.setItem(storageKey, JSON.stringify(snapshotState()));
-            } catch {}
-          });
+          el.addEventListener("input", markDirty);
         }
 
         els.save.addEventListener("click", save);
@@ -397,6 +570,25 @@ const editorData = entry
         window.addEventListener("beforeunload", (event) => {
           if (dirty) event.preventDefault();
         });
+
+        // 왕복 검증 스크립트용 훅 (dev 전용 페이지라 노출 무해)
+        window.__devEditorRoundtrip = (md) => {
+          if (!editor) return { error: "no editor" };
+          const saved = { mode, original, base };
+          try {
+            setMarkdown(editor, md);
+            const out = serializeMarkdown(editor);
+            const { stable } = checkRoundtrip(editor, md);
+            setMarkdown(editor, md);
+            const merged = mergeMarkdown(md, out, serializeMarkdown(editor));
+            return { out, stable, merged };
+          } finally {
+            setMarkdown(editor, saved.original);
+            original = saved.original;
+            base = saved.base;
+          }
+        };
+        window.__devEditorState = () => ({ mode, dirty });
       }
     </script>
 
@@ -417,6 +609,56 @@ const editorData = entry
       }
       .dark .editor-field {
         border-color: #404040;
+      }
+
+      /* ---- WYSIWYG (ProseMirror) ---- */
+      #wysiwyg .ProseMirror {
+        outline: none;
+        min-height: 24rem;
+        caret-color: var(--accent);
+      }
+      #wysiwyg .ProseMirror::selection {
+        background: color-mix(in srgb, var(--accent) 25%, transparent);
+      }
+      /* tiptap은 표 셀/리스트 내용을 <p>로 감싼다 — prose 문단 마진을 제거해
+         실제 글 화면(마크다운 직렬 렌더)과 간격을 맞춘다 */
+      #wysiwyg .ProseMirror table p,
+      #wysiwyg .ProseMirror li > p {
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      /* 표 셀 선택 하이라이트 */
+      #wysiwyg .ProseMirror .selectedCell {
+        position: relative;
+      }
+      #wysiwyg .ProseMirror .selectedCell::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        pointer-events: none;
+      }
+      /* 체크리스트 */
+      #wysiwyg ul[data-type="taskList"] {
+        list-style: none;
+        padding-left: 0.25rem;
+      }
+      #wysiwyg ul[data-type="taskList"] li {
+        display: flex;
+        gap: 0.5rem;
+      }
+      #wysiwyg ul[data-type="taskList"] li > label {
+        flex-shrink: 0;
+        margin-top: 0.2em;
+      }
+      #wysiwyg ul[data-type="taskList"] li > label input {
+        accent-color: var(--accent);
+      }
+      #wysiwyg ul[data-type="taskList"] li > div {
+        flex: 1;
+      }
+      #wysiwyg ul[data-type="taskList"] li p {
+        margin: 0;
       }
     </style>
   </body>

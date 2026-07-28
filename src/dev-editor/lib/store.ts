@@ -102,15 +102,46 @@ const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 export function splitFrontmatter(raw: string): {
   frontmatter: Record<string, unknown>;
   body: string;
+  /** frontmatter 블록 + 본문 앞 공백까지의 원문 프리픽스 (바이트 보존용) */
+  rawPrefix: string;
 } {
   const match = raw.match(FRONTMATTER_RE);
-  if (!match) return { frontmatter: {}, body: raw };
+  if (!match) return { frontmatter: {}, body: raw, rawPrefix: "" };
   const parsed = parseYaml(match[1]);
   const frontmatter =
     parsed && typeof parsed === "object" && !Array.isArray(parsed)
       ? (parsed as Record<string, unknown>)
       : {};
-  return { frontmatter, body: raw.slice(match[0].length).replace(/^\r?\n/, "") };
+  const afterFm = raw.slice(match[0].length);
+  const blank = afterFm.match(/^\r?\n/)?.[0] ?? "";
+  return {
+    frontmatter,
+    body: afterFm.slice(blank.length),
+    rawPrefix: raw.slice(0, match[0].length) + blank,
+  };
+}
+
+/**
+ * frontmatter가 의미상 동일한지 비교 (무수정 저장 시 원문 서식 보존용).
+ * draft 부재는 false, tags 부재는 []로 정규화해 비교한다.
+ */
+function frontmatterEquals(
+  a: Record<string, unknown>,
+  b: Record<string, unknown>,
+): boolean {
+  const canon = (fm: Record<string, unknown>): string => {
+    const norm: Record<string, unknown> = {};
+    const keys = new Set([...Object.keys(fm), "draft", "tags"]);
+    for (const key of [...keys].sort()) {
+      let value: unknown = fm[key];
+      if (key === "draft") value = value === true;
+      else if (key === "tags") value = Array.isArray(value) ? value : [];
+      else value = normalizeFieldValue(key, value);
+      if (value !== undefined) norm[key] = value;
+    }
+    return JSON.stringify(norm);
+  };
+  return canon(a) === canon(b);
 }
 
 /**
@@ -315,9 +346,9 @@ export async function updateEntry(
   }
 
   // 알 수 없는 frontmatter 필드 보존: 디스크의 기존 필드 위에 폼 값을 merge
-  const existing = splitFrontmatter(
+  const { frontmatter: existing, rawPrefix } = splitFrontmatter(
     await fs.readFile(found.filePath, "utf-8"),
-  ).frontmatter;
+  );
   const incoming =
     input.frontmatter && typeof input.frontmatter === "object"
       ? input.frontmatter
@@ -332,11 +363,14 @@ export async function updateEntry(
   }
 
   validateFrontmatter(collection, merged);
-  await fs.writeFile(
-    found.filePath,
-    serializeEntry(merged, String(input.body ?? "")),
-    "utf-8",
-  );
+  // frontmatter가 의미상 그대로면 원문 서식(따옴표/배열 표기 등)을 바이트
+  // 단위로 보존한다 — "무수정 저장 diff 0" 보장의 일부.
+  const body = String(input.body ?? "");
+  const content =
+    rawPrefix && frontmatterEquals(existing, merged)
+      ? rawPrefix + body.replace(/\s+$/, "") + "\n"
+      : serializeEntry(merged, body);
+  await fs.writeFile(found.filePath, content, "utf-8");
   const newStat = await fs.stat(found.filePath);
   return { mtimeMs: newStat.mtimeMs };
 }
