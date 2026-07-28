@@ -11,8 +11,9 @@ const pretendardRegular = fs.readFileSync(
   path.join(fontDir, "Pretendard-Regular.otf"),
 );
 
-// 브랜드 마크: OG 배경(#0a0a0a)에 맞춰 사전 반전된 PNG를 data URI로 임베드한다.
-// (satori는 런타임 CSS filter를 지원하지 않는다. 인코딩은 글마다 반복되지 않도록 모듈 최상위에서 1회만.)
+// 브랜드 마크: 원본 색상(흰 채움 + 검은 윤곽선) 그대로의 크롭 PNG를 data URI로 임베드한다.
+// 색 반전 금지 — 다크 배경 위에서 흰 실루엣이 도드라지는 것이 의도된 디자인이다.
+// (인코딩은 글마다 반복되지 않도록 모듈 최상위에서 1회만.)
 const markPng = fs.readFileSync(path.resolve(process.cwd(), "src/assets/og-mark.png"));
 const MARK_URI = `data:image/png;base64,${markPng.toString("base64")}`;
 
@@ -67,7 +68,7 @@ export async function renderOgImage({
                 position: "absolute",
                 right: "40px",
                 bottom: "0px",
-                opacity: 0.85,
+                opacity: 1,
               },
             },
           },
