@@ -58,6 +58,15 @@ body {
   overflow-wrap: break-word;
 }
 
+/* 3) 머리글 셀과 첫 열 라벨 셀은 항상 한 줄 — 표가 좁아지면 (2)의 표 자체
+      가로 스크롤이 받아주므로 nowrap이 페이지 오버플로를 만들지 않는다.
+      본문이 긴 일반 td에는 걸지 않는다 (첫 열은 짧은 라벨 컨벤션 전제 —
+      첫 열에 긴 문장을 쓰는 표가 생기면 이 규칙을 재검토할 것). */
+.prose table th,
+.prose table td:first-child {
+  white-space: nowrap;
+}
+
 /* 머리글 셀이 전부 빈 표(`|  |  |`): 빈 헤더 띠가 그려지지 않게 숨긴다 */
 .prose thead:not(:has(th:not(:empty))) {
   display: none;
