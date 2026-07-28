@@ -4,17 +4,26 @@ import PostLayout from "../../layouts/PostLayout.astro";
 import { getPublishedBlog } from "../../lib/content";
 
 export async function getStaticPaths() {
+  // 최신순(desc) 정렬 목록 기준: [i-1] = 더 최신(다음 글), [i+1] = 더 오래된(이전 글)
   const posts = await getPublishedBlog();
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { entry: post },
-  }));
+  return posts.map((post, i) => {
+    const newer = posts[i - 1];
+    const older = posts[i + 1];
+    return {
+      params: { slug: post.id },
+      props: {
+        entry: post,
+        prev: older && { title: older.data.title, href: `/blog/${older.id}/` },
+        next: newer && { title: newer.data.title, href: `/blog/${newer.id}/` },
+      },
+    };
+  });
 }
 
-const { entry } = Astro.props;
+const { entry, prev, next } = Astro.props;
 const { Content, headings } = await render(entry);
 ---
 
-<PostLayout {entry} {headings} collection="blog">
+<PostLayout {entry} {headings} {prev} {next} collection="blog">
   <Content />
 </PostLayout>

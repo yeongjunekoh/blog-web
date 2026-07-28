@@ -3,6 +3,7 @@ import type { MarkdownHeading } from "astro";
 import BaseLayout from "./BaseLayout.astro";
 import Comments from "../components/Comments.astro";
 import FormattedDate from "../components/FormattedDate.astro";
+import PostNav, { type PostNavLink } from "../components/PostNav.astro";
 import Toc from "../components/Toc.astro";
 import { AUTHOR_NAME, SITE_URL } from "../consts";
 import type { AnyEntry } from "../lib/content";
@@ -11,9 +12,13 @@ interface Props {
   entry: AnyEntry;
   collection: "blog" | "knowledge";
   headings?: MarkdownHeading[];
+  /** 같은 컬렉션의 더 오래된 글 (이전 글, ←) */
+  prev?: PostNavLink;
+  /** 같은 컬렉션의 더 최신 글 (다음 글, →) */
+  next?: PostNavLink;
 }
 
-const { entry, collection, headings = [] } = Astro.props;
+const { entry, collection, headings = [], prev, next } = Astro.props;
 const { title, description, pubDate, updatedDate, tags } = entry.data;
 const category = "category" in entry.data ? entry.data.category : undefined;
 
@@ -92,6 +97,8 @@ const jsonLd = {
       <slot />
     </div>
   </article>
+
+  <PostNav {prev} {next} />
 
   <Comments />
 </BaseLayout>

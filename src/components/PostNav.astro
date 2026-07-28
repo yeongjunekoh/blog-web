@@ -1,0 +1,62 @@
+---
+/**
+ * 글 하단 이전/다음 글 내비게이션 (순수 정적 HTML).
+ * - 이전 글(←) = 더 오래된 글, 다음 글(→) = 더 최신 글.
+ * - 이웃 계산은 [slug].astro getStaticPaths에서 getPublishedBlog()/
+ *   getPublishedKnowledge() 정렬 목록으로 수행해 props로 내려준다.
+ *   (draft 필터가 헬퍼에 있으므로 dev/prod 규약을 자동으로 따른다)
+ */
+export interface PostNavLink {
+  title: string;
+  href: string;
+}
+
+interface Props {
+  prev?: PostNavLink;
+  next?: PostNavLink;
+}
+
+const { prev, next } = Astro.props;
+---
+
+{
+  (prev || next) && (
+    <nav
+      aria-label="이전 글과 다음 글"
+      class="mt-14 grid gap-3 border-t border-neutral-200 pt-8 sm:grid-cols-2 dark:border-neutral-800"
+    >
+      {prev ? (
+        <a
+          href={prev.href}
+          rel="prev"
+          class="group rounded-lg border border-neutral-200 p-4 transition-colors hover:border-accent dark:border-neutral-800 dark:hover:border-accent"
+        >
+          <span class="text-xs text-neutral-500 dark:text-neutral-400">
+            ← 이전 글
+          </span>
+          <span class="mt-1 block font-medium text-neutral-900 group-hover:text-accent dark:text-neutral-100">
+            {prev.title}
+          </span>
+        </a>
+      ) : (
+        <span class="hidden sm:block" aria-hidden="true" />
+      )}
+      {
+        next && (
+          <a
+            href={next.href}
+            rel="next"
+            class="group rounded-lg border border-neutral-200 p-4 transition-colors hover:border-accent sm:text-right dark:border-neutral-800 dark:hover:border-accent"
+          >
+            <span class="text-xs text-neutral-500 dark:text-neutral-400">
+              다음 글 →
+            </span>
+            <span class="mt-1 block font-medium text-neutral-900 group-hover:text-accent dark:text-neutral-100">
+              {next.title}
+            </span>
+          </a>
+        )
+      }
+    </nav>
+  )
+}
