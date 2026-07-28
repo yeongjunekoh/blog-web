@@ -25,9 +25,19 @@ function isCurrent(href: string): boolean {
   >
     <a
       href="/"
-      class="text-base font-bold tracking-tight hover:text-accent"
-      >{SITE_TITLE}</a
+      class="flex items-center gap-2 text-base font-bold tracking-tight hover:text-accent"
     >
+      <img
+        src="/mark.png"
+        alt=""
+        aria-hidden="true"
+        width="28"
+        height="28"
+        class="h-7 w-7 shrink-0 dark:invert"
+        decoding="async"
+      />
+      <span>{SITE_TITLE}</span>
+    </a>
     <div class="flex items-center gap-1 sm:gap-2">
       <nav aria-label="주 메뉴">
         <ul class="flex items-center gap-1 text-sm sm:gap-2">
