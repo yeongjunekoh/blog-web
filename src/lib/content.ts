@@ -4,9 +4,18 @@ export type BlogEntry = CollectionEntry<"blog">;
 export type KnowledgeEntry = CollectionEntry<"knowledge">;
 export type AnyEntry = BlogEntry | KnowledgeEntry;
 
-/** 프로덕션 빌드에서는 draft: true 글을 어디에도 노출하지 않는다. */
-function isPublished({ data }: { data: { draft: boolean } }): boolean {
-  return import.meta.env.PROD ? data.draft !== true : true;
+/**
+ * 프로덕션 빌드에서는 비공개 글(visibility: private)을 어디에도 노출하지
+ * 않는다. dev에서는 비공개 글도 보인다.
+ * `draft: true`는 폐기 별칭 — 옛 표기가 남은 파일도 계속 비공개로 취급한다.
+ */
+function isPublished({
+  data,
+}: {
+  data: { visibility: "public" | "private"; draft?: boolean };
+}): boolean {
+  if (!import.meta.env.PROD) return true;
+  return data.visibility !== "private" && data.draft !== true;
 }
 
 function byDateDesc(a: AnyEntry, b: AnyEntry): number {

@@ -7,13 +7,29 @@ import { fileURLToPath } from "node:url";
 /**
  * 프로덕션 순수성 검증: `pnpm build` 산출물(dist/)에 dev 편집기의 흔적이
  * 단 하나도 없어야 한다 ("배포 환경에서는 조회만 가능"의 구조적 보장).
- * 겸사겸사 draft 글이 dist에서 완전히 제외되는지도 확인한다.
+ * 겸사겸사 비공개 글(visibility: private)과 폐기 별칭(draft: true) 글이
+ * dist에서 완전히 제외되는지도 확인한다.
  */
 
 const ROOT = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const DIST = path.join(ROOT, "dist");
-const DRAFT_SLUG = "e2e-tmp-draft-purity";
-const DRAFT_FILE = path.join(ROOT, "src", "content", "blog", `${DRAFT_SLUG}.md`);
+const CONTENT_BLOG = path.join(ROOT, "src", "content", "blog");
+
+/** 비공개 처리되어야 하는 임시 글 2종: 정식 표기 + 폐기 별칭(회귀 검증) */
+const PRIVATE_POSTS = [
+  {
+    slug: "e2e-tmp-private-purity",
+    token: "e2e-비공개-본문-토큰",
+    fmLine: "visibility: private",
+    label: "visibility: private",
+  },
+  {
+    slug: "e2e-tmp-draft-alias-purity",
+    token: "e2e-draft별칭-본문-토큰",
+    fmLine: "draft: true",
+    label: "폐기 별칭 draft: true",
+  },
+] as const;
 
 /** 텍스트로 검사할 확장자 (바이너리는 스킵) */
 const TEXT_EXTS = new Set([
@@ -39,24 +55,26 @@ function runBuild(): void {
   }
 }
 
-test("빌드 산출물에 편집기 흔적이 없고 draft가 제외된다", async () => {
-  // draft 임시 글을 만들어 두고 빌드 (draft 제외 검증 겸용)
-  fs.mkdirSync(path.dirname(DRAFT_FILE), { recursive: true });
-  fs.writeFileSync(
-    DRAFT_FILE,
-    [
-      "---",
-      "title: e2e draft 순수성 검증",
-      "description: 프로덕션 빌드에서 제외되어야 하는 draft 글",
-      "pubDate: 2026-07-28",
-      "tags: []",
-      "draft: true",
-      "---",
-      "",
-      "이 본문은 dist 어디에도 나타나면 안 된다: e2e-draft-본문-토큰",
-      "",
-    ].join("\n"),
-  );
+test("빌드 산출물에 편집기 흔적이 없고 비공개 글이 제외된다 (draft 별칭 포함)", async () => {
+  // 비공개 임시 글 2종을 만들어 두고 빌드 (제외 검증 겸용)
+  fs.mkdirSync(CONTENT_BLOG, { recursive: true });
+  for (const post of PRIVATE_POSTS) {
+    fs.writeFileSync(
+      path.join(CONTENT_BLOG, `${post.slug}.md`),
+      [
+        "---",
+        `title: "e2e 순수성 검증 (${post.label})"`,
+        "description: 프로덕션 빌드에서 제외되어야 하는 비공개 글",
+        "pubDate: 2026-07-28",
+        "tags: []",
+        post.fmLine,
+        "---",
+        "",
+        `이 본문은 dist 어디에도 나타나면 안 된다: ${post.token}`,
+        "",
+      ].join("\n"),
+    );
+  }
 
   try {
     runBuild();
@@ -83,17 +101,28 @@ test("빌드 산출물에 편집기 흔적이 없고 draft가 제외된다", asy
     const sitemapIndex = path.join(DIST, "sitemap-index.xml");
     expect(fs.existsSync(sitemapIndex)).toBe(true);
 
-    // 4) draft 글은 페이지/본문 어디에도 없음
-    expect(fs.existsSync(path.join(DIST, "blog", DRAFT_SLUG))).toBe(false);
-    const draftOffenders: string[] = [];
-    for (const file of walk(DIST)) {
-      if (!TEXT_EXTS.has(path.extname(file))) continue;
-      if (fs.readFileSync(file, "utf-8").includes("e2e-draft-본문-토큰")) {
-        draftOffenders.push(path.relative(DIST, file));
+    // 4) 비공개 글(정식 표기 + 폐기 별칭)은 페이지/본문 어디에도 없음
+    //    (HTML/RSS/sitemap/llms.txt 등 dist의 모든 텍스트 파일 검사)
+    for (const post of PRIVATE_POSTS) {
+      expect(
+        fs.existsSync(path.join(DIST, "blog", post.slug)),
+        `${post.label} 글의 페이지가 빌드됨`,
+      ).toBe(false);
+      const privateOffenders: string[] = [];
+      for (const file of walk(DIST)) {
+        if (!TEXT_EXTS.has(path.extname(file))) continue;
+        if (fs.readFileSync(file, "utf-8").includes(post.token)) {
+          privateOffenders.push(path.relative(DIST, file));
+        }
       }
+      expect(
+        privateOffenders,
+        `${post.label} 본문이 노출된 파일`,
+      ).toEqual([]);
     }
-    expect(draftOffenders, "draft 본문이 노출된 파일").toEqual([]);
   } finally {
-    fs.rmSync(DRAFT_FILE, { force: true });
+    for (const post of PRIVATE_POSTS) {
+      fs.rmSync(path.join(CONTENT_BLOG, `${post.slug}.md`), { force: true });
+    }
   }
 });

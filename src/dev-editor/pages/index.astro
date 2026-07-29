@@ -100,9 +100,9 @@ const sections = await Promise.all(
                     <time class="shrink-0 text-xs text-neutral-400 tabular-nums">
                       {entry.pubDate}
                     </time>
-                    {entry.draft && (
+                    {entry.visibility === "private" && (
                       <span class="shrink-0 rounded border border-amber-500/40 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                        draft
+                        비공개
                       </span>
                     )}
                     <span class="shrink-0 rounded border border-neutral-200 px-1.5 py-0.5 font-mono text-[11px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
@@ -173,7 +173,7 @@ const sections = await Promise.all(
                     type="submit"
                     class="ml-auto rounded bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 dark:text-neutral-950"
                   >
-                    만들기 (draft)
+                    만들기 (비공개로 시작)
                   </button>
                 </div>
                 <p

@@ -23,9 +23,21 @@ const KNOWN_FIELD_ORDER = [
   "updatedDate",
   "tags",
   "heroImage",
-  "draft",
+  "visibility",
   "category",
 ] as const;
+
+/**
+ * 공개 여부 판정. `draft: true`는 `visibility: private`의 폐기 별칭이다
+ * (스키마 주석 참고 — 옛 표기가 남은 파일도 비공개로 취급).
+ */
+export function effectiveVisibility(
+  fm: Record<string, unknown>,
+): "public" | "private" {
+  return fm.visibility === "private" || fm.draft === true
+    ? "private"
+    : "public";
+}
 
 export class StoreError extends Error {
   constructor(
@@ -43,7 +55,7 @@ export interface EntrySummary {
   title: string;
   description: string;
   pubDate: string;
-  draft: boolean;
+  visibility: "public" | "private";
   category?: string;
 }
 
@@ -123,7 +135,9 @@ export function splitFrontmatter(raw: string): {
 
 /**
  * frontmatter가 의미상 동일한지 비교 (무수정 저장 시 원문 서식 보존용).
- * draft 부재는 false, tags 부재는 []로 정규화해 비교한다.
+ * visibility 부재는 "public", tags 부재는 []로 정규화해 비교한다.
+ * 폐기 별칭 draft는 visibility로 접어서(effectiveVisibility) 비교하므로,
+ * 옛 표기 파일을 무수정 저장해도 원문 바이트가 보존된다.
  */
 function frontmatterEquals(
   a: Record<string, unknown>,
@@ -131,10 +145,11 @@ function frontmatterEquals(
 ): boolean {
   const canon = (fm: Record<string, unknown>): string => {
     const norm: Record<string, unknown> = {};
-    const keys = new Set([...Object.keys(fm), "draft", "tags"]);
+    const keys = new Set([...Object.keys(fm), "visibility", "tags"]);
+    keys.delete("draft"); // 폐기 별칭은 visibility로 접어서 비교
     for (const key of [...keys].sort()) {
       let value: unknown = fm[key];
-      if (key === "draft") value = value === true;
+      if (key === "visibility") value = effectiveVisibility(fm);
       else if (key === "tags") value = Array.isArray(value) ? value : [];
       else value = normalizeFieldValue(key, value);
       if (value !== undefined) norm[key] = value;
@@ -174,6 +189,8 @@ function normalizeFieldValue(key: string, value: unknown): unknown {
     if (value instanceof Date) return value.toISOString().slice(0, 10);
     return String(value);
   }
+  // 기본값 public은 키를 생략한다 (frontmatter를 최소로 유지)
+  if (key === "visibility" && value === "public") return undefined;
   return value;
 }
 
@@ -258,7 +275,7 @@ export async function listEntries(
       title: String(frontmatter.title ?? "(제목 없음)"),
       description: String(frontmatter.description ?? ""),
       pubDate: toDateString(frontmatter.pubDate),
-      draft: frontmatter.draft === true,
+      visibility: effectiveVisibility(frontmatter),
       ...(typeof frontmatter.category === "string"
         ? { category: frontmatter.category }
         : {}),
@@ -305,7 +322,7 @@ export async function createEntry(
     description: String(input.description ?? "").trim(),
     pubDate: new Date().toISOString().slice(0, 10),
     tags: [],
-    draft: true,
+    visibility: "private", // 새 글은 비공개로 시작
     ...(collection === "knowledge"
       ? { category: String(input.category ?? "").trim() }
       : {}),
@@ -361,6 +378,11 @@ export async function updateEntry(
       else merged[key] = value;
     }
   }
+  // 편집기는 공개 여부를 visibility로만 기록한다 — 폼이 visibility를 보내면
+  // 폐기 별칭 draft는 제거한다. (frontmatter가 의미상 그대로면 아래
+  // 바이트 보존 경로를 타므로, 실제 이관은 frontmatter를 수정한 저장에서만
+  // 일어난다)
+  if ("visibility" in incoming) delete merged.draft;
 
   validateFrontmatter(collection, merged);
   // frontmatter가 의미상 그대로면 원문 서식(따옴표/배열 표기 등)을 바이트

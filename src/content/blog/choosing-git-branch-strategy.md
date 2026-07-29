@@ -4,7 +4,7 @@ description: "회사에서 git branch 전략을 수립. 어떤 문제가 있었�
 pubDate: 2025-08-17
 tags: ["문제해결", "엔지니어", "Git", "전략"]
 heroImage: /images/blog/choosing-git-branch-strategy/01.png
-draft: true
+visibility: private
 ---
 
 ## ❏ 배경

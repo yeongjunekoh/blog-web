@@ -2,7 +2,12 @@
 import "../../styles/global.css";
 import ReloadGuard from "../components/ReloadGuard.astro";
 import { isCollectionName } from "../../lib/schemas";
-import { readEntry, StoreError, type EntryFile } from "../lib/store";
+import {
+  effectiveVisibility,
+  readEntry,
+  StoreError,
+  type EntryFile,
+} from "../lib/store";
 
 const collection = Astro.params.collection ?? "";
 const slug = Astro.params.slug ?? "";
@@ -29,6 +34,8 @@ const asDateString = (value: unknown): string => {
   return value == null ? "" : String(value);
 };
 const tagsText = Array.isArray(fm.tags) ? (fm.tags as unknown[]).join(", ") : "";
+// 공개 여부 초기값. 폐기 별칭 draft: true도 비공개로 표시한다.
+const visibility = effectiveVisibility(fm);
 const previewPath = `/${collection}/${slug}/`;
 
 // 사이트 본문(PostLayout)과 동일한 prose 클래스 — WYSIWYG 영역에 그대로 적용
@@ -157,7 +164,7 @@ const editorData = entry
                   class="mb-6 rounded-lg border border-neutral-200 dark:border-neutral-800"
                 >
                   <summary class="cursor-pointer select-none px-4 py-2.5 text-xs font-medium text-neutral-500 hover:text-accent">
-                    frontmatter (설명 · 날짜 · 태그 · draft)
+                    frontmatter (설명 · 날짜 · 태그 · 공개 여부)
                   </summary>
                   <div class="grid gap-3 border-t border-neutral-200 p-4 dark:border-neutral-800">
                     <label class="grid gap-1 text-xs font-medium text-neutral-500">
@@ -209,13 +216,21 @@ const editorData = entry
                         </label>
                       )}
                       <label class="flex items-center gap-1.5 text-xs font-medium text-neutral-500">
-                        <input
-                          id="f-draft"
-                          type="checkbox"
-                          checked={fm.draft === true}
-                          class="accent-[var(--accent)]"
-                        />
-                        draft (프로덕션 제외)
+                        공개 여부
+                        <select id="f-visibility" class="editor-field w-auto">
+                          <option value="public" selected={visibility === "public"}>
+                            공개
+                          </option>
+                          <option
+                            value="private"
+                            selected={visibility === "private"}
+                          >
+                            비공개
+                          </option>
+                        </select>
+                        <span class="font-normal text-neutral-400">
+                          비공개는 배포에서 제외
+                        </span>
                       </label>
                     </div>
                   </div>
@@ -300,7 +315,7 @@ const editorData = entry
           updatedDate: $("f-updatedDate"),
           tags: $("f-tags"),
           heroImage: $("f-heroImage"),
-          draft: $("f-draft"),
+          visibility: $("f-visibility"),
           category: $("f-category"), // knowledge에서만 존재
           body: $("f-body"),
           status: $("status"),
@@ -424,7 +439,7 @@ const editorData = entry
               .map((tag) => tag.trim())
               .filter(Boolean),
             heroImage: els.heroImage.value.trim(),
-            draft: els.draft.checked,
+            visibility: els.visibility.value,
           };
           if (els.category) frontmatter.category = els.category.value;
           return frontmatter;
@@ -441,7 +456,7 @@ const editorData = entry
           els.updatedDate.value = fm.updatedDate ?? "";
           els.tags.value = (fm.tags ?? []).join(", ");
           els.heroImage.value = fm.heroImage ?? "";
-          els.draft.checked = Boolean(fm.draft);
+          els.visibility.value = fm.visibility ?? "public";
           if (els.category) els.category.value = fm.category ?? "";
           els.body.value = snapBody ?? "";
           if (mode === "wysiwyg" && editor) setMarkdown(editor, snapBody ?? "");

@@ -12,7 +12,16 @@ export const blogSchema = z.object({
   updatedDate: z.coerce.date().optional(),
   tags: z.array(z.string()).default([]),
   heroImage: z.string().optional(),
-  draft: z.boolean().default(false),
+  /** 공개 여부. `private`면 프로덕션 빌드에서 완전히 제외된다 (dev에서는 보임). */
+  visibility: z.enum(["public", "private"]).default("public"),
+  /**
+   * @deprecated `visibility`로 대체된 폐기 별칭.
+   * 스키마에서 제거하면 옛 표기(`draft: true`)가 남은 파일에서 이 필드가
+   * 조용히 무시되어 비공개 글이 공개되는 사고가 나므로, 파싱은 계속
+   * 받아들이고 발행 판정(`isPublished`)에서 비공개로 처리한다.
+   * 신규 작성 경로(dev 편집기)는 visibility만 쓴다.
+   */
+  draft: z.boolean().optional(),
 });
 
 export const knowledgeSchema = blogSchema.extend({

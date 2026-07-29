@@ -33,7 +33,7 @@ title: "글 제목"
 description: "목록/OG/llms.txt에 쓰이는 한두 문장 요약 (필수)"
 pubDate: 2026-07-22
 tags: ["태그1", "태그2"]      # 선택, 기본 []
-draft: false                  # 선택, 기본 false
+visibility: public            # 선택, 기본 public. private이면 배포에서 제외
 updatedDate: 2026-08-01       # 선택, 수정 시
 category: "웹"                # knowledge 컬렉션만 필수
 ---
@@ -51,9 +51,10 @@ import IslandDemo from "../../components/IslandDemo.tsx";
 <IslandDemo client:visible />
 ```
 
-### draft 운용
+### 공개 여부(visibility) 운용
 
-- `draft: true`면 **프로덕션 빌드에서 완전히 제외**된다 (목록/상세/RSS/sitemap/llms.txt/OG 전부). `pnpm dev`에서는 보인다.
+- `visibility: private`면 **프로덕션 빌드에서 완전히 제외**된다 (목록/상세/RSS/sitemap/llms.txt/OG 전부). `pnpm dev`에서는 보인다. 기본값은 `public`(키 생략 가능).
+- `draft: true`는 **폐기 별칭**이다 — 옛 표기가 남은 파일도 계속 비공개 처리되지만, 새 글에는 쓰지 말 것 (visibility만 사용).
 - 필터 로직: `src/lib/content.ts`의 `isPublished`. 새 목록/피드를 추가할 때 반드시 `getPublishedBlog()`/`getPublishedKnowledge()` 헬퍼를 쓸 것 (raw `getCollection` 금지).
 
 ## 발행 절차
@@ -68,7 +69,7 @@ import IslandDemo from "../../components/IslandDemo.tsx";
 - [ ] 새 콘텐츠 유형이라면 `.md` 사본 엔드포인트(`[slug].md.ts`)와 `llms.txt`/`llms-full.txt`에 포함했는가
 - [ ] JSON-LD를 붙였는가 (상세: BlogPosting, 홈: Person — `src/layouts/PostLayout.astro` 참고)
 - [ ] RSS(`src/pages/rss.xml.ts`)에 전문이 포함되는가
-- [ ] draft 필터를 통과시켰는가 (`src/lib/content.ts` 헬퍼 사용)
+- [ ] 공개 여부(visibility) 필터를 통과시켰는가 (`src/lib/content.ts` 헬퍼 사용)
 - [ ] 페이지당 h1 하나, article/nav/main/time 등 시맨틱 요소 유지
 - [ ] OG 이미지: 상세 페이지는 `/og/{collection}/{slug}.png` 자동 생성 (`src/lib/og.ts`, satori는 woff2 불가 — OTF 폰트 사용 중)
 
@@ -80,7 +81,7 @@ src/
   content.config.ts    # 콘텐츠 컬렉션 스키마 (glob loader)
   content/{blog,knowledge}/   # 글 원본
   data/resume.yaml     # 이력서 데이터 (본문 하드코딩 금지, 이 파일만 수정)
-  lib/content.ts       # draft 필터 + 정렬 + 카테고리 그룹핑
+  lib/content.ts       # 공개 여부(visibility) 필터 + 정렬 + 카테고리 그룹핑
   lib/markdown.ts      # .md 사본 / RSS 전문 렌더링 / MDX 스트립
   lib/og.ts            # satori OG 이미지 (Pretendard OTF)
   layouts/             # BaseLayout(head/SEO/JSON-LD), PostLayout
@@ -96,7 +97,7 @@ src/
 ## 자주 쓰는 명령
 
 ```bash
-pnpm dev        # 개발 서버 (draft 글도 보임)
+pnpm dev        # 개발 서버 (비공개 글도 보임)
 pnpm build      # 프로덕션 빌드 → dist/
 pnpm preview    # 빌드 결과 로컬 서빙
 ```

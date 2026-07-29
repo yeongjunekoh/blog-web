@@ -4,7 +4,7 @@
  * - 이전 글(←) = 더 오래된 글, 다음 글(→) = 더 최신 글.
  * - 이웃 계산은 [slug].astro getStaticPaths에서 getPublishedBlog()/
  *   getPublishedKnowledge() 정렬 목록으로 수행해 props로 내려준다.
- *   (draft 필터가 헬퍼에 있으므로 dev/prod 규약을 자동으로 따른다)
+ *   (공개 여부 필터가 헬퍼에 있으므로 dev/prod 규약을 자동으로 따른다)
  */
 export interface PostNavLink {
   title: string;

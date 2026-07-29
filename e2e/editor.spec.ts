@@ -113,7 +113,9 @@ test("생성: 새 글 폼 → 파일 생성 → 편집 화면 이동", async ({ 
   expect(fs.existsSync(contentPath("blog", slug))).toBe(true);
   const raw = fs.readFileSync(contentPath("blog", slug), "utf-8");
   expect(raw).toContain("title: e2e 생성 테스트");
-  expect(raw).toContain("draft: true");
+  // 새 글은 비공개로 시작. 폐기 별칭 draft는 신규 파일에 절대 쓰지 않는다.
+  expect(raw).toContain("visibility: private");
+  expect(raw).not.toContain("draft:");
   // yaml 날짜 함정: pubDate는 YYYY-MM-DD 문자열 그대로 (타임스탬프화 금지)
   expect(raw).toMatch(/pubDate: \d{4}-\d{2}-\d{2}\n/);
 });
@@ -132,7 +134,7 @@ test("수정+저장(원문 모드): 본문 수정 → 공개 페이지 HTML(JS �
   expect(fs.readFileSync(contentPath("blog", slug), "utf-8")).toContain(token);
 
   // 공개 페이지의 "서버가 보낸 원본 HTML"에 본문이 포함 — JS 미실행 크롤러 관점
-  // (= 이 블로그의 존재 이유 동시 검증). dev는 draft도 렌더한다.
+  // (= 이 블로그의 존재 이유 동시 검증). dev는 비공개 글도 렌더한다.
   await expect
     .poll(
       async () => {
@@ -362,6 +364,92 @@ test("보안: X-Dev-Editor 헤더 없는 변경 요청은 403", async ({ page })
   });
   expect(res.status()).toBe(403);
   expect(fs.existsSync(contentPath("blog", "e2e-tmp-forbidden"))).toBe(false);
+});
+
+test("공개 여부: 비공개 배지·select 반영, 무수정 저장 diff 0, 공개 전환 시 키 생략", async ({
+  page,
+}) => {
+  const slug = "e2e-tmp-visibility";
+  await createViaApi(page, "blog", slug); // 새 글은 visibility: private로 생성
+
+  // 목록: "비공개" 배지
+  await page.goto("/_editor");
+  const row = page.locator("[data-entry-row]", {
+    has: page.locator(`button[data-delete][data-slug="${slug}"]`),
+  });
+  await expect(row.getByText("비공개", { exact: true })).toBeVisible();
+
+  // 편집기: select 초기값 private
+  await page.goto(`/_editor/blog/${slug}`);
+  await waitEditorReady(page);
+  await expect(page.locator("#f-visibility")).toHaveValue("private");
+
+  // 무수정 저장: frontmatter 원문 바이트 보존 (diff 0)
+  const filePath = contentPath("blog", slug);
+  const before = fs.readFileSync(filePath, "utf-8");
+  await page.locator("#save").click();
+  await expect(page.locator("#status")).toHaveAttribute("data-state", "saved");
+  expect(fs.readFileSync(filePath, "utf-8")).toBe(before);
+
+  // 공개 전환 저장: 기본값 public은 키를 생략한다
+  // (select는 접힌 frontmatter 패널 안에 있으므로 먼저 연다)
+  await page.locator("#fm-panel summary").click();
+  await page.locator("#f-visibility").selectOption("public");
+  await expect(page.locator("#status")).toHaveAttribute("data-state", "dirty");
+  await page.locator("#save").click();
+  await expect(page.locator("#status")).toHaveAttribute("data-state", "saved");
+  const after = fs.readFileSync(filePath, "utf-8");
+  expect(after).not.toContain("visibility:");
+  expect(after).not.toContain("draft:");
+
+  await deleteViaApi(page, "blog", slug);
+});
+
+test("폐기 별칭 회귀: draft: true 글도 비공개로 표시되고 무수정 저장 시 diff 0", async ({
+  page,
+}) => {
+  const slug = "e2e-tmp-legacy-draft";
+  const filePath = contentPath("blog", slug);
+  const before = [
+    "---",
+    "title: 레거시 draft 별칭 검증",
+    "description: 옛 표기가 남은 글",
+    "pubDate: 2026-07-01",
+    "draft: true",
+    "---",
+    "",
+    "레거시 별칭 본문입니다.",
+    "",
+  ].join("\n");
+  fs.writeFileSync(filePath, before);
+
+  // 목록: 폐기 별칭도 "비공개" 배지로 표시
+  await page.goto("/_editor");
+  const row = page.locator("[data-entry-row]", {
+    has: page.locator(`button[data-delete][data-slug="${slug}"]`),
+  });
+  await expect(row.getByText("비공개", { exact: true })).toBeVisible();
+
+  // 편집기: select가 비공개로 초기화
+  await page.goto(`/_editor/blog/${slug}`);
+  await waitEditorReady(page);
+  await expect(page.locator("#f-visibility")).toHaveValue("private");
+
+  // 무수정 저장: draft: true 표기 그대로 바이트 보존 (자동 이관 금지)
+  await page.locator("#save").click();
+  await expect(page.locator("#status")).toHaveAttribute("data-state", "saved");
+  expect(fs.readFileSync(filePath, "utf-8")).toBe(before);
+
+  // 공개 전환 저장: 별칭 draft가 제거되고 visibility 키도 없음(기본 public)
+  await page.locator("#fm-panel summary").click();
+  await page.locator("#f-visibility").selectOption("public");
+  await page.locator("#save").click();
+  await expect(page.locator("#status")).toHaveAttribute("data-state", "saved");
+  const after = fs.readFileSync(filePath, "utf-8");
+  expect(after).not.toContain("draft:");
+  expect(after).not.toContain("visibility:");
+
+  await deleteViaApi(page, "blog", slug);
 });
 
 test("함정1 실측: guard 없이(?noguard=1) 저장 시 편집 화면 full-reload 여부", async ({
