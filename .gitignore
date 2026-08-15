@@ -23,6 +23,7 @@ pnpm-debug.log*
 # editor
 .vscode/
 .idea/
+.obsidian/
 
 # playwright
 test-results/
