@@ -1,0 +1,165 @@
+---
+import { parse } from "yaml";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import aboutRaw from "../data/about.yaml?raw";
+import resumeRaw from "../data/resume.yaml?raw";
+import { AUTHOR_NAME, SITE_URL, GITHUB_URL } from "../consts";
+
+interface About {
+  tagline: string;
+  story: string[];
+  principles: {
+    title: string;
+    body: string;
+    links?: { title: string; href: string }[];
+  }[];
+  now: string[];
+}
+
+interface ResumeContact {
+  title: string;
+  contact: { email: string; github: string; location?: string };
+  skills: { category: string; items: string[] }[];
+}
+
+const about = parse(aboutRaw) as About;
+const resume = parse(resumeRaw) as ResumeContact;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  mainEntity: {
+    "@type": "Person",
+    name: AUTHOR_NAME,
+    jobTitle: resume.title,
+    url: SITE_URL,
+    email: `mailto:${resume.contact.email}`,
+    sameAs: [GITHUB_URL],
+    worksFor: { "@type": "Organization", name: "케어링" },
+    knowsAbout: [
+      "프로덕트 매니지먼트",
+      "프론트엔드 개발",
+      "노인장기요양보험",
+      "ERP·CRM 등 B2B 업무 시스템",
+    ],
+    description: about.tagline,
+  },
+};
+---
+
+<BaseLayout
+  title="소개"
+  description={`${AUTHOR_NAME}의 소개. 걸어온 길, 일하는 원칙, 지금 하고 있는 고민.`}
+  {jsonLd}
+>
+  <article>
+    <header class="mb-12 flex items-start justify-between gap-6">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">{AUTHOR_NAME}</h1>
+        <p class="mt-2 text-lg text-neutral-600 dark:text-neutral-400">
+          {about.tagline}
+        </p>
+      </div>
+      <img
+        src="/mark.png"
+        alt=""
+        aria-hidden="true"
+        width="96"
+        height="96"
+        class="h-20 w-20 shrink-0"
+        decoding="async"
+      />
+    </header>
+
+    <section class="mb-12" aria-labelledby="story-heading">
+      <h2
+        id="story-heading"
+        class="mb-6 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight dark:border-neutral-800"
+      >
+        걸어온 길
+      </h2>
+      <div
+        class="space-y-4 leading-relaxed text-neutral-700 dark:text-neutral-300"
+      >
+        {about.story.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    </section>
+
+    <section class="mb-12" aria-labelledby="principles-heading">
+      <h2
+        id="principles-heading"
+        class="mb-6 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight dark:border-neutral-800"
+      >
+        일하는 원칙
+      </h2>
+      <ul class="space-y-8">
+        {
+          about.principles.map((principle) => (
+            <li>
+              <h3 class="font-semibold">{principle.title}</h3>
+              <p class="mt-2 leading-relaxed text-neutral-700 dark:text-neutral-300">
+                {principle.body}
+              </p>
+              {principle.links && principle.links.length > 0 && (
+                <p class="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+                  관련 글 —{" "}
+                  {principle.links.map((link, i) => (
+                    <>
+                      {i > 0 && " · "}
+                      <a href={link.href} class="text-accent hover:underline">
+                        {link.title}
+                      </a>
+                    </>
+                  ))}
+                </p>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="mb-12" aria-labelledby="now-heading">
+      <h2
+        id="now-heading"
+        class="mb-6 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight dark:border-neutral-800"
+      >
+        지금은
+      </h2>
+      <div
+        class="space-y-4 leading-relaxed text-neutral-700 dark:text-neutral-300"
+      >
+        {about.now.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    </section>
+
+    <section aria-labelledby="contact-heading">
+      <h2
+        id="contact-heading"
+        class="mb-6 border-b border-neutral-200 pb-3 text-lg font-semibold tracking-tight dark:border-neutral-800"
+      >
+        연락
+      </h2>
+      <ul
+        class="flex flex-wrap gap-x-5 gap-y-1 text-sm text-neutral-500 dark:text-neutral-400"
+      >
+        <li>
+          <a
+            href={`mailto:${resume.contact.email}`}
+            class="text-accent hover:underline">{resume.contact.email}</a
+          >
+        </li>
+        <li>
+          <a
+            href={resume.contact.github}
+            rel="me noopener"
+            class="text-accent hover:underline">GitHub</a
+          >
+        </li>
+        <li>
+          <a href="/resume/" class="text-accent hover:underline">이력서 보기 &rarr;</a>
+        </li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>

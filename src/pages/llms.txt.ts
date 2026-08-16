@@ -32,6 +32,7 @@ export const GET: APIRoute = async () => {
     "",
     "## 기타",
     "",
+    `- [소개](${new URL("/about.md", SITE_URL).href}): ${SITE_TITLE}의 소개 — 걸어온 길, 일하는 원칙, 지금 하고 있는 고민`,
     `- [이력서](${new URL("/resume/", SITE_URL).href}): ${SITE_TITLE}의 이력서`,
     `- [RSS (전문 피드)](${new URL("/rss.xml", SITE_URL).href})`,
     "",
